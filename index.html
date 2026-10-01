@@ -1,0 +1,1586 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1b2029" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Finanças">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<script src="config.js"></script>
+<title>Minhas Finanças</title>
+<style>
+  :root {
+    --bg: #f5f6f8; --card: #ffffff; --text: #1d2330; --muted: #6b7280; --border: #e3e6eb;
+    --green: #16a34a; --red: #dc2626; --blue: #2563eb; --amber: #d97706;
+    --green-bg: #dcfce7; --red-bg: #fee2e2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12151b; --card: #1b2029; --text: #e7eaf0; --muted: #9aa3b2; --border: #2b3240;
+      --green: #4ade80; --red: #f87171; --blue: #60a5fa; --amber: #fbbf24;
+      --green-bg: #14321f; --red-bg: #3a1a1a;
+    }
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); }
+  header { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--border); background: var(--card); }
+  header h1 { font-size: 20px; margin: 0; }
+  .month-nav { display: flex; align-items: center; gap: 8px; }
+  .month-nav span { min-width: 150px; text-align: center; font-weight: 600; }
+  main { max-width: 1100px; margin: 0 auto; padding: 20px 16px 60px; display: grid; gap: 16px; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+  .card h2 { font-size: 15px; margin: 0 0 12px; }
+  .stat .label { color: var(--muted); font-size: 13px; }
+  .stat .value { font-size: 24px; font-weight: 700; margin-top: 4px; font-variant-numeric: tabular-nums; }
+  .pos { color: var(--green); } .neg { color: var(--red); }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 800px) { .grid2 { grid-template-columns: 1fr; } }
+  button, input, select { font: inherit; color: inherit; }
+  button { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 7px 12px; cursor: pointer; }
+  button:hover { border-color: var(--blue); }
+  button:disabled { opacity: .6; cursor: default; }
+  button.primary { background: #2563eb; color: #fff; border-color: #2563eb; }
+  button.danger { color: var(--red); border-color: var(--red); background: transparent; }
+  button.link { border: none; background: none; color: var(--blue); padding: 6px 0; text-decoration: underline; }
+  button.icon { padding: 4px 8px; border: none; background: transparent; color: var(--muted); }
+  button.icon:hover { color: var(--red); }
+  button.icon.edit:hover { color: var(--blue); }
+  tr.editing td { background: color-mix(in srgb, var(--blue) 12%, transparent); }
+  .card.editing { border-color: var(--blue); box-shadow: 0 0 0 1px var(--blue); }
+  input, select { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 7px 10px; width: 100%; }
+  form.tx { display: grid; grid-template-columns: 120px 1fr 1fr 130px 140px auto; gap: 8px; align-items: end; }
+  @media (max-width: 800px) { form.tx { grid-template-columns: 1fr 1fr; } }
+  label.f { display: grid; gap: 4px; font-size: 12px; color: var(--muted); }
+  .seg { display: flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .seg button { border: none; border-radius: 0; flex: 1; padding: 7px 8px; }
+  .seg button.on[data-t="despesa"] { background: var(--red-bg); color: var(--red); font-weight: 600; }
+  .seg button.on[data-t="receita"] { background: var(--green-bg); color: var(--green); font-weight: 600; }
+  .seg.plain button.on { background: #2563eb; color: #fff; font-weight: 600; }
+  .area-tag { font-size: 12px; font-weight: 500; color: var(--muted); margin-left: 6px; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); font-weight: 500; font-size: 12px; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .by { color: var(--muted); font-weight: 400; font-size: 12px; margin-left: 6px; }
+  .tbl-wrap { overflow-x: auto; }
+  select.cat-sel { width: auto; max-width: 170px; padding: 3px 6px; background: transparent; border-color: transparent; cursor: pointer; }
+  select.cat-sel:hover, select.cat-sel:focus { border-color: var(--border); background: var(--bg); }
+  .toolbar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+  .toolbar input, .toolbar select { width: auto; flex: 1; min-width: 140px; }
+  .bar-row { display: grid; grid-template-columns: 110px 1fr 100px; gap: 8px; align-items: center; font-size: 13px; margin-bottom: 8px; }
+  .bar { height: 10px; background: var(--bg); border-radius: 5px; overflow: hidden; }
+  .bar > div { height: 100%; border-radius: 5px; }
+  .budget-row { margin-bottom: 12px; font-size: 13px; }
+  .budget-row .top { display: flex; justify-content: space-between; margin-bottom: 4px; }
+  .empty { color: var(--muted); font-size: 14px; padding: 12px 0; }
+  .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  dialog { border: 1px solid var(--border); border-radius: 12px; background: var(--card); color: var(--text); max-width: 460px; width: 92vw; }
+  dialog::backdrop { background: rgba(0,0,0,.4); }
+  dialog h2 { margin-top: 0; font-size: 18px; }
+  dialog h3 { font-size: 14px; margin: 18px 0 8px; }
+  .dlg-foot { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+  .cat-list { display: grid; gap: 6px; max-height: 300px; overflow-y: auto; margin: 10px 0; }
+  .cat-item { display: flex; gap: 6px; align-items: center; }
+  .cat-item input[type=number] { width: 110px; }
+  .muted { color: var(--muted); font-size: 12px; }
+  .fab { display: none; }
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .status-chip { font-size: 12px; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--amber); color: var(--amber); white-space: nowrap; }
+  .status-chip.busy { border-color: var(--border); color: var(--blue); }
+  .avatar { width: 36px; height: 36px; min-height: 0 !important; border-radius: 50%; padding: 0; font-weight: 700; background: #2563eb; color: #fff; border: none; flex: none; }
+  #areaSeg { min-width: 240px; }
+  #areaSeg button { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+
+  /* aviso de versão nova */
+  .update-bar { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 30;
+    width: min(440px, calc(100% - 24px)); background: var(--card); border: 1px solid var(--blue); border-radius: 12px;
+    padding: 14px 16px; box-shadow: 0 8px 28px rgba(0,0,0,.3); }
+  .update-title { font-weight: 600; }
+  .update-changes { margin: 6px 0 0; padding-left: 18px; font-size: 13px; color: var(--muted); }
+  .update-changes:empty { display: none; }
+  .update-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+
+  /* telas de carregamento e login */
+  .screen { min-height: 100vh; min-height: 100dvh; display: flex; align-items: center; justify-content: center; padding: 20px 16px; flex-direction: column; gap: 12px; }
+  .spinner { width: 34px; height: 34px; border: 3px solid var(--border); border-top-color: var(--blue); border-radius: 50%; animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .auth-card { width: min(400px, 100%); display: grid; gap: 12px; padding: 28px 24px; }
+  .auth-card h1 { margin: 0; font-size: 22px; text-align: center; }
+  .auth-card > p { margin: 0; text-align: center; }
+  .auth-logo { width: 64px; height: 64px; border-radius: 16px; justify-self: center; }
+  .auth-card form { display: grid; gap: 10px; }
+  .auth-card input, .auth-card button { min-height: 44px; font-size: 16px; }
+  .google-btn { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; font-weight: 600; }
+  .or { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 12px; }
+  .or::before, .or::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+  .auth-msg { font-size: 14px; padding: 10px 12px; border-radius: 8px; background: var(--red-bg); color: var(--red); }
+  .auth-msg.info { background: color-mix(in srgb, var(--blue) 14%, transparent); color: var(--text); }
+
+  /* família */
+  .code-box { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; padding: 12px; border: 1px dashed var(--blue); border-radius: 10px; }
+  .code { font-family: ui-monospace, Consolas, monospace; font-size: 22px; font-weight: 700; letter-spacing: 2px; }
+  .member { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+  .member .who { flex: 1; min-width: 150px; }
+  .member .who b { display: block; }
+  .badge { font-size: 11px; padding: 2px 8px; border-radius: 999px; background: var(--bg); color: var(--muted); border: 1px solid var(--border); }
+  .badge.admin { color: var(--blue); border-color: var(--blue); }
+  .member .acts { display: flex; gap: 6px; }
+  .member .acts button { font-size: 13px; padding: 5px 10px; min-height: 0; }
+  .fam-form { display: flex; gap: 8px; }
+  .fam-form input { flex: 1; }
+  .fam-tabs { margin: 4px 0 8px; }
+  .count { display: inline-block; min-width: 20px; padding: 0 6px; margin-left: 4px; border-radius: 999px; background: var(--red); color: #fff; font-size: 12px; font-weight: 700; line-height: 20px; text-align: center; }
+  .req-card { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; border-color: var(--amber); font-weight: 600; }
+  .wait-box { padding: 14px; border-radius: 10px; border: 1px dashed var(--amber); margin: 8px 0 12px; }
+
+  /* ===== Celular ===== */
+  @media (max-width: 640px) {
+    header { position: sticky; top: 0; z-index: 10; padding: 10px 12px; padding-top: max(10px, env(safe-area-inset-top)); gap: 8px; }
+    header h1 { font-size: 17px; }
+    .brand { width: 100%; }
+    .brand h1 { flex: 1; }
+    #areaSeg { width: 100%; min-width: 0; }
+    #areaSeg button { max-width: none; min-height: 38px; }
+    .month-nav { width: 100%; justify-content: space-between; gap: 6px; }
+    .month-nav span { min-width: 0; flex: 1; font-size: 15px; }
+    .month-nav button { min-width: 44px; min-height: 40px; }
+    main { padding: 12px 12px calc(90px + env(safe-area-inset-bottom)); gap: 12px; }
+    .card { padding: 14px; }
+
+    /* resumo em 2x2 */
+    .cards { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .stat { padding: 12px; }
+    .stat .label { font-size: 12px; }
+    .stat .value { font-size: 17px; word-break: break-word; }
+
+    /* campos maiores; 16px evita o zoom automático do iPhone */
+    input, select, button { font-size: 16px; min-height: 44px; }
+    label.f { font-size: 13px; }
+    label.f input, label.f select { font-size: 16px; }
+    form.tx { grid-template-columns: 1fr 1fr; gap: 10px; }
+    form.tx > :nth-child(1), form.tx > :nth-child(2), form.tx > :nth-child(5), form.tx > :nth-child(6) { grid-column: 1 / -1; }
+    form.tx > :nth-child(6) button { flex: 1; min-height: 48px; }
+    .seg button { min-height: 42px; }
+    #recurRow { font-size: 14px; flex-wrap: wrap; }
+    #recurRow input[type=checkbox] { min-height: 0; width: 20px !important; height: 20px; }
+    #recurRow input[type=number] { min-height: 36px; }
+
+    .bar-row { grid-template-columns: 92px 1fr; row-gap: 2px; }
+    .bar-row > :last-child { grid-column: 1 / -1; text-align: left !important; font-size: 12px; color: var(--muted); }
+    .budget-row .top { flex-wrap: wrap; gap: 2px 8px; }
+    .card h2#budgetsTitle { flex-wrap: wrap; gap: 8px; }
+
+    .toolbar input { flex-basis: 100%; }
+    .toolbar select { min-width: 0; }
+
+    /* tabela vira lista de cartões */
+    table, tbody { display: block; }
+    thead { display: none; }
+    #txBody tr { display: grid; grid-template-columns: auto 1fr auto; grid-template-areas: "desc desc val" "date cat act"; align-items: center; gap: 2px 8px; padding: 10px 2px; border-bottom: 1px solid var(--border); }
+    #txBody td { border: none; padding: 0; }
+    #txBody td.c-desc { grid-area: desc; font-weight: 600; overflow-wrap: anywhere; }
+    #txBody td.num { grid-area: val; font-weight: 600; }
+    #txBody td.c-date { grid-area: date; color: var(--muted); font-size: 13px; }
+    #txBody td.c-cat { grid-area: cat; min-width: 0; white-space: nowrap; }
+    #txBody td.c-act { grid-area: act; justify-self: end; }
+    #txBody td.empty { grid-column: 1 / -1; }
+    tr.editing { background: color-mix(in srgb, var(--blue) 12%, transparent); border-radius: 8px; }
+    tr.editing td { background: none; }
+    select.cat-sel { min-height: 32px; font-size: 14px; max-width: 150px; padding: 2px 4px; border-color: var(--border); }
+    button.icon { min-height: 40px; min-width: 40px; font-size: 18px; }
+
+    .actions button { flex: 1 1 100%; }
+    .cat-item input[type=number] { width: 90px; }
+    dialog { padding: 14px; max-height: 90vh; }
+    .code { font-size: 19px; }
+    .member .acts button { min-height: 36px; }
+
+    /* botão flutuante para novo lançamento */
+    .fab { display: flex; align-items: center; justify-content: center; position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom)); width: 58px; height: 58px; border-radius: 50%; background: #2563eb; color: #fff; border: none; font-size: 30px; line-height: 1; box-shadow: 0 4px 14px rgba(0,0,0,.25); z-index: 20; }
+  }
+</style>
+</head>
+<body>
+
+<div id="bootScreen" class="screen">
+  <div class="spinner"></div>
+  <div class="muted">Carregando…</div>
+</div>
+
+<div id="authScreen" class="screen" hidden>
+  <div class="card auth-card">
+    <img class="auth-logo" src="icons/icon-192.png" alt="">
+    <h1>Minhas Finanças</h1>
+    <p class="muted">Entre para ver e lançar suas finanças.</p>
+    <div class="auth-msg info" id="authSetup" hidden>
+      O app ainda não foi conectado ao Firebase. Siga o passo a passo do arquivo <b>LEIA-ME.md</b> e preencha o <b>config.js</b>.
+    </div>
+    <div id="authForms">
+      <button type="button" class="google-btn" id="googleBtn">
+        <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>
+        Entrar com Google
+      </button>
+      <div class="or" style="margin:14px 0">ou com e-mail</div>
+      <div class="seg plain" id="authTabs" style="margin-bottom:10px">
+        <button type="button" data-m="login" class="on">Entrar</button>
+        <button type="button" data-m="signup">Criar conta</button>
+      </div>
+      <form id="authForm">
+        <label class="f" id="nameRow" hidden>Seu nome <input id="aName" autocomplete="name"></label>
+        <label class="f">E-mail <input id="aEmail" type="email" required autocomplete="email"></label>
+        <label class="f">Senha <input id="aPass" type="password" required minlength="6" autocomplete="current-password"></label>
+        <button class="primary" type="submit" id="authSubmit">Entrar</button>
+      </form>
+      <button type="button" class="link" id="forgotBtn">Esqueci minha senha</button>
+    </div>
+    <div class="auth-msg" id="authMsg" hidden></div>
+  </div>
+</div>
+
+<div id="lockScreen" class="screen" hidden>
+  <div class="card auth-card">
+    <img class="auth-logo" src="icons/icon-192.png" alt="">
+    <h1>Minhas Finanças</h1>
+    <p class="muted" id="lockWho"></p>
+    <button class="primary" id="unlockBtn">🔓 Desbloquear com digital</button>
+    <div class="auth-msg" id="lockMsg" hidden></div>
+    <button type="button" class="link" id="lockLogout" style="justify-self:center">Entrar com e-mail e senha</button>
+  </div>
+</div>
+
+<div id="appRoot" hidden>
+<header>
+  <div class="brand">
+    <h1>💰 Minhas Finanças</h1>
+    <span class="status-chip" id="statusChip" hidden></span>
+    <button class="avatar" id="userBtn" title="Minha conta"></button>
+  </div>
+  <div class="seg plain" id="areaSeg">
+    <button type="button" data-area="personal" class="on">👤 Pessoal</button>
+    <button type="button" data-area="family" id="famTab">👨‍👩‍👧 Família</button>
+  </div>
+  <div class="month-nav">
+    <button id="prev" aria-label="Mês anterior">◀</button>
+    <span id="monthLabel"></span>
+    <button id="next" aria-label="Próximo mês">▶</button>
+    <button id="today">Hoje</button>
+  </div>
+</header>
+
+<main>
+  <section class="cards">
+    <div class="card stat"><div class="label">Receitas do mês</div><div class="value pos" id="sumIn">R$ 0,00</div></div>
+    <div class="card stat"><div class="label">Despesas do mês</div><div class="value neg" id="sumOut">R$ 0,00</div></div>
+    <div class="card stat"><div class="label">Saldo do mês</div><div class="value" id="sumBal">R$ 0,00</div></div>
+    <div class="card stat"><div class="label">Saldo acumulado</div><div class="value" id="sumTotal">R$ 0,00</div></div>
+  </section>
+
+  <section class="card req-card" id="reqCard" hidden>
+    <span id="reqInfo"></span>
+    <button class="primary" id="reqOpen">Ver pedidos</button>
+  </section>
+
+  <section class="card" id="legacyCard" hidden>
+    <h2>Dados da versão anterior</h2>
+    <p class="muted" id="legacyInfo"></p>
+    <div class="actions">
+      <button class="primary" id="legacyImport">Importar para a área Pessoal</button>
+      <button id="legacyDismiss">Não importar</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span id="formTitle">Nova transação</span><span class="area-tag" id="formArea"></span></h2>
+    <form class="tx" id="txForm">
+      <label class="f">Tipo
+        <div class="seg" id="typeSeg">
+          <button type="button" data-t="despesa" class="on">Despesa</button>
+          <button type="button" data-t="receita">Receita</button>
+        </div>
+      </label>
+      <label class="f">Descrição <input id="fDesc" required placeholder="Ex.: Mercado"></label>
+      <label class="f">Categoria <select id="fCat"></select></label>
+      <label class="f">Valor (R$) <input id="fVal" required inputmode="decimal" placeholder="0,00"></label>
+      <label class="f">Data <input id="fDate" type="date" required></label>
+      <div style="display:flex;gap:6px">
+        <button class="primary" type="submit" id="submitBtn">Adicionar</button>
+        <button type="button" id="cancelEdit" hidden>Cancelar</button>
+      </div>
+    </form>
+    <label class="muted" id="recurRow" style="display:flex;gap:6px;align-items:center;margin-top:8px;width:auto">
+      <input type="checkbox" id="fRecur" style="width:auto"> Repetir nos próximos
+      <input type="number" id="fRecurN" min="1" max="60" value="11" style="width:70px"> meses
+    </label>
+  </section>
+
+  <section class="grid2">
+    <div class="card">
+      <h2>Despesas por categoria</h2>
+      <div id="catChart"></div>
+    </div>
+    <div class="card">
+      <h2 id="budgetsTitle" style="display:flex;justify-content:space-between;align-items:center">Orçamentos <button id="editCats">Categorias e limites</button></h2>
+      <div id="budgets"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Últimos 6 meses</h2>
+    <div id="history"></div>
+  </section>
+
+  <section class="card">
+    <h2>Transações do mês</h2>
+    <div class="toolbar">
+      <input id="search" placeholder="Buscar descrição...">
+      <select id="filterCat"><option value="">Todas as categorias</option></select>
+      <select id="filterType"><option value="">Receitas e despesas</option><option value="receita">Só receitas</option><option value="despesa">Só despesas</option></select>
+    </div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Data</th><th>Descrição</th><th>Categoria</th><th style="text-align:right">Valor</th><th></th></tr></thead>
+      <tbody id="txBody"></tbody>
+    </table></div>
+  </section>
+
+  <section class="card">
+    <h2>Conta e família</h2>
+    <p class="muted" id="accountInfo"></p>
+    <div class="actions">
+      <button class="primary" id="openFam">Família</button>
+      <button id="openAccount">Minha conta</button>
+    </div>
+  </section>
+
+  <section class="card" id="installCard" hidden>
+    <h2>Instalar no celular</h2>
+    <p class="muted" id="installInfo"></p>
+    <div class="actions"><button class="primary" id="installBtn" hidden>Instalar app</button></div>
+  </section>
+
+  <section class="card">
+    <h2>Backup</h2>
+    <p class="muted">Os dados ficam salvos na nuvem e funcionam sem internet. O backup exporta a área que está aberta (Pessoal ou Família).</p>
+    <p class="muted" id="appVersion"></p>
+    <div class="actions">
+      <button id="exportJson">Exportar backup (JSON)</button>
+      <button id="importJson">Importar backup</button>
+      <button id="exportCsv">Exportar CSV (Excel)</button>
+      <input type="file" id="fileIn" accept=".json" hidden>
+    </div>
+  </section>
+</main>
+
+<button class="fab" id="fab" aria-label="Novo lançamento">+</button>
+</div>
+
+<div class="update-bar" id="updateBar" role="status" hidden>
+  <div class="update-title" id="updateTitle"></div>
+  <ul class="update-changes" id="updateChanges"></ul>
+  <div class="update-actions">
+    <button id="updateLater">Depois</button>
+    <button class="primary" id="updateNow">Atualizar agora</button>
+  </div>
+</div>
+
+<dialog id="catDlg">
+  <h2>Categorias e limites mensais</h2>
+  <p class="muted">Valem para a área aberta (<span id="catDlgArea"></span>). Limite 0 = sem orçamento.</p>
+  <div class="cat-list" id="catList"></div>
+  <div style="display:flex;gap:6px">
+    <input id="newCat" placeholder="Nova categoria">
+    <select id="newCatType" style="width:120px"><option value="despesa">Despesa</option><option value="receita">Receita</option></select>
+    <button id="addCat">+</button>
+  </div>
+  <div class="dlg-foot"><button class="primary" id="closeDlg">Salvar</button></div>
+</dialog>
+
+<dialog id="famDlg">
+  <div id="famBody"></div>
+  <div class="dlg-foot"><button id="famClose">Fechar</button></div>
+</dialog>
+
+<dialog id="bioDlg">
+  <h2>🔒 Usar a digital para abrir o app?</h2>
+  <p>Assim, mesmo com o celular desbloqueado, só você abre suas finanças. O app vai pedir a digital (ou o rosto) do aparelho ao ser aberto.</p>
+  <p class="muted">Você pode mudar isso depois em "Minha conta".</p>
+  <div class="auth-msg" id="bioDlgMsg" hidden></div>
+  <div class="dlg-foot">
+    <button id="bioLater">Agora não</button>
+    <button class="primary" id="bioYes">Ativar</button>
+  </div>
+</dialog>
+
+<dialog id="accDlg">
+  <h2>Minha conta</h2>
+  <label class="f">Nome <input id="accName" autocomplete="name"></label>
+  <p class="muted" id="accEmail"></p>
+  <h3>Desbloqueio com digital</h3>
+  <p class="muted" id="bioStatus"></p>
+  <div class="actions" id="bioActions">
+    <button id="bioToggle"></button>
+    <label class="muted" id="bioAfterRow" style="display:flex;align-items:center;gap:6px">Bloquear após
+      <select id="bioAfter" style="width:auto">
+        <option value="0">sair do app</option>
+        <option value="60">1 minuto fora</option>
+        <option value="300">5 minutos fora</option>
+      </select>
+    </label>
+  </div>
+  <div class="dlg-foot">
+    <button class="danger" id="logoutBtn" style="margin-right:auto">Sair da conta</button>
+    <button id="accCancel">Fechar</button>
+    <button class="primary" id="accSave">Salvar</button>
+  </div>
+</dialog>
+
+<script type="module">
+// Versão do Firebase: se mudar aqui, mude também no sw.js
+const SDK = window.FIREBASE_SDK_URL || 'https://www.gstatic.com/firebasejs/10.14.1/';
+const CFG = window.FIREBASE_CONFIG;
+
+const COLORS = ['#2563eb','#dc2626','#16a34a','#d97706','#9333ea','#0891b2','#db2777','#65a30d','#ea580c','#4f46e5','#0d9488','#a16207'];
+const DEFAULT_CATS = [
+  { name: 'Moradia', type: 'despesa', limit: 0 },
+  { name: 'Alimentação', type: 'despesa', limit: 0 },
+  { name: 'Transporte', type: 'despesa', limit: 0 },
+  { name: 'Saúde', type: 'despesa', limit: 0 },
+  { name: 'Lazer', type: 'despesa', limit: 0 },
+  { name: 'Educação', type: 'despesa', limit: 0 },
+  { name: 'Contas', type: 'despesa', limit: 0 },
+  { name: 'Outros', type: 'despesa', limit: 0 },
+  { name: 'Salário', type: 'receita', limit: 0 },
+  { name: 'Freelance', type: 'receita', limit: 0 },
+  { name: 'Outras receitas', type: 'receita', limit: 0 },
+];
+const LEGACY_KEY = 'financas-v1';           // dados da versão sem login
+const LEGACY_DONE = 'financas-v1-importado';
+const AREA_KEY = 'financas-area';
+
+const $ = id => document.getElementById(id);
+const brl = v => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+const ym = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+const parseVal = s => parseFloat(String(s).replace(/\./g, '').replace(',', '.'));
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const lsGet = k => { try { return localStorage.getItem(k); } catch { return null; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch {} };
+
+// ===== Estado =====
+let A, F, auth, db;          // módulos e instâncias do Firebase
+let me = null;               // usuário logado
+let profile = {};            // users/{uid}: { familyId }
+let unsubProfile = null;
+let profileLoaded = false;
+// pedidos de entrada: o admin acompanha os da família; quem pediu acompanha o próprio
+let requests = [], reqWatchId = null, unsubReq = null;
+let pendingWatchId = null, unsubPending = null;
+let famView = 'members';
+// cada área: { id, doc, months: Map(mês -> {id: lançamento}), unsubs, pending }
+const areas = { personal: null, family: null };
+let area = lsGet(AREA_KEY) === 'family' ? 'family' : 'personal';
+// visão da área aberta, usada por toda a tela
+let state = { categories: DEFAULT_CATS, transactions: [] };
+let txType = 'despesa';
+let editingId = null;
+let cur = new Date(); cur.setDate(1);
+
+function show(which) {
+  $('bootScreen').hidden = which !== 'boot';
+  $('authScreen').hidden = which !== 'auth';
+  $('lockScreen').hidden = which !== 'lock';
+  $('appRoot').hidden = which !== 'app';
+}
+
+// ===== Inicialização e login =====
+async function boot() {
+  if (!CFG) { show('auth'); $('authSetup').hidden = false; $('authForms').hidden = true; return; }
+  try {
+    const [appM, authM, fsM] = await Promise.all(
+      ['firebase-app.js', 'firebase-auth.js', 'firebase-firestore.js'].map(f => import(SDK + f)));
+    A = authM; F = fsM;
+    const app = appM.initializeApp(CFG);
+    auth = A.getAuth(app);
+    auth.languageCode = 'pt-BR';
+    // cache local: o app abre e lança sem internet; envia quando a conexão voltar
+    try { db = F.initializeFirestore(app, { localCache: F.persistentLocalCache({ tabManager: F.persistentMultipleTabManager() }) }); }
+    catch { db = F.getFirestore(app); }
+    A.onAuthStateChanged(auth, onUser);
+  } catch (e) {
+    console.error(e);
+    show('auth');
+    authMessage('Não foi possível carregar o app. Verifique a internet e tente de novo.');
+  }
+}
+
+const AUTH_ERRORS = {
+  'auth/invalid-credential': 'E-mail ou senha incorretos.',
+  'auth/wrong-password': 'E-mail ou senha incorretos.',
+  'auth/user-not-found': 'E-mail ou senha incorretos.',
+  'auth/invalid-email': 'E-mail inválido.',
+  'auth/email-already-in-use': 'Já existe uma conta com este e-mail. Use "Entrar".',
+  'auth/weak-password': 'A senha precisa ter pelo menos 6 caracteres.',
+  'auth/too-many-requests': 'Muitas tentativas. Aguarde alguns minutos e tente de novo.',
+  'auth/network-request-failed': 'Sem conexão com a internet.',
+  'auth/popup-blocked': 'O navegador bloqueou a janela do Google. Permita pop-ups ou entre com e-mail.',
+  'auth/unauthorized-domain': 'Este endereço não está autorizado no Firebase (veja o LEIA-ME, passo "Domínios autorizados").',
+  'auth/operation-not-allowed': 'Este tipo de login não está ativado no Firebase (veja o LEIA-ME).',
+};
+function authMessage(text, info) {
+  const m = $('authMsg');
+  m.hidden = !text; m.textContent = text || ''; m.className = 'auth-msg' + (info ? ' info' : '');
+}
+function authError(e) {
+  if (['auth/popup-closed-by-user', 'auth/cancelled-popup-request'].includes(e.code)) return;
+  authMessage(AUTH_ERRORS[e.code] || 'Não foi possível entrar (' + (e.code || e.message) + ').');
+}
+
+let authMode = 'login';
+$('authTabs').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  authMode = b.dataset.m;
+  document.querySelectorAll('#authTabs button').forEach(x => x.classList.toggle('on', x === b));
+  $('nameRow').hidden = authMode !== 'signup';
+  $('authSubmit').textContent = authMode === 'signup' ? 'Criar conta' : 'Entrar';
+  $('aPass').autocomplete = authMode === 'signup' ? 'new-password' : 'current-password';
+  authMessage('');
+});
+$('googleBtn').onclick = async () => {
+  authMessage('');
+  try { await A.signInWithPopup(auth, new A.GoogleAuthProvider()); } catch (e) { authError(e); }
+};
+$('authForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  authMessage('');
+  const email = $('aEmail').value.trim(), pass = $('aPass').value, btn = $('authSubmit');
+  btn.disabled = true;
+  try {
+    if (authMode === 'signup') {
+      const name = $('aName').value.trim();
+      const cred = await A.createUserWithEmailAndPassword(auth, email, pass);
+      if (name) { await A.updateProfile(cred.user, { displayName: name }); renderAccount(); }
+    } else {
+      await A.signInWithEmailAndPassword(auth, email, pass);
+    }
+  } catch (err) { authError(err); }
+  btn.disabled = false;
+});
+$('forgotBtn').onclick = async () => {
+  const email = $('aEmail').value.trim();
+  if (!email) { authMessage('Digite seu e-mail no campo acima e toque em "Esqueci minha senha" de novo.', true); $('aEmail').focus(); return; }
+  try { await A.sendPasswordResetEmail(auth, email); authMessage('Se houver uma conta com esse e-mail, enviamos um link para criar uma nova senha.', true); }
+  catch (e) { authError(e); }
+};
+
+function stopArea(key) {
+  areas[key]?.unsubs.forEach(u => u());
+  areas[key] = null;
+}
+function stopRequests() { unsubReq?.(); unsubReq = null; reqWatchId = null; requests = []; }
+function stopPending() { unsubPending?.(); unsubPending = null; pendingWatchId = null; }
+function stopAll() {
+  stopArea('personal'); stopArea('family'); stopRequests(); stopPending();
+  if (unsubProfile) { unsubProfile(); unsubProfile = null; }
+}
+
+// administradores acompanham os pedidos de entrada da família
+function syncRequestWatch() {
+  const fam = areas.family;
+  const want = fam?.doc?.members?.[me?.uid] === 'admin' ? fam.id : null;
+  if (want === reqWatchId) return;
+  stopRequests();
+  if (!want) return;
+  reqWatchId = want;
+  unsubReq = F.onSnapshot(F.collection(db, 'ledgers', want, 'requests'), s => {
+    requests = s.docs.map(d => ({ uid: d.id, ...d.data() })).sort((a, b) => (a.at || 0) - (b.at || 0));
+    refresh();
+  }, err => { console.warn('pedidos', err); requests = []; });
+}
+
+// quem pediu para entrar acompanha o próprio pedido até ser aprovado ou recusado
+function syncPendingWatch() {
+  const want = !profile.familyId && profile.pending?.fid ? profile.pending.fid : null;
+  if (want === pendingWatchId) return;
+  stopPending();
+  if (!want) return;
+  pendingWatchId = want;
+  const famName = profile.pending.name || 'família';
+  unsubPending = F.onSnapshot(F.doc(db, 'ledgers', want, 'requests', me.uid), async s => {
+    if (s.exists() || s.metadata.fromCache) return; // ainda aguardando
+    // o pedido saiu da fila: foi aprovado ou recusado
+    stopPending();
+    let approved = false;
+    try { const l = await F.getDoc(F.doc(db, 'ledgers', want)); approved = l.exists() && me.uid in (l.data().members || {}); } catch {}
+    await F.setDoc(F.doc(db, 'users', me.uid), approved ? { familyId: want, pending: null } : { pending: null }, { merge: true }).catch(fail);
+    if (approved) { area = 'family'; lsSet(AREA_KEY, area); alert(`Seu pedido foi aprovado! Agora você faz parte da ${famName}.`); }
+    else alert(`Seu pedido para entrar na ${famName} não foi aprovado.`);
+  }, err => console.warn('pedido', err));
+}
+
+async function onUser(u) {
+  stopAll();
+  me = u; profile = {};
+  if (!u) { show('auth'); return; }
+  await bioReady;
+  if (me !== u) return;
+  if (lockOn()) lockNow(); else show('app');
+  renderAccount();
+  profileLoaded = false;
+  await ensurePersonal(u);
+  if (me !== u) return; // saiu enquanto carregava
+  watchArea('personal', 'u_' + u.uid);
+  unsubProfile = F.onSnapshot(F.doc(db, 'users', u.uid), s => {
+    profile = s.data() || {};
+    profileLoaded = true;
+    const fid = profile.familyId || null;
+    if (fid !== (areas.family?.id || null)) {
+      stopArea('family');
+      if (fid) watchArea('family', fid);
+    }
+    syncPendingWatch();
+    refresh();
+  }, err => console.warn('perfil', err));
+  refresh();
+  checkLegacy();
+  offerBio();
+}
+
+// cria a área pessoal no primeiro acesso
+async function ensurePersonal(u) {
+  const ref = F.doc(db, 'ledgers', 'u_' + u.uid);
+  try {
+    const s = await F.getDoc(ref);
+    // só cria se o servidor confirmou que não existe (evita sobrescrever estando offline)
+    if (!s.exists() && !s.metadata.fromCache)
+      await F.setDoc(ref, { type: 'personal', members: { [u.uid]: 'admin' }, categories: DEFAULT_CATS, createdAt: Date.now() });
+  } catch (e) { console.warn('área pessoal', e); }
+}
+
+function watchArea(key, id, attempt = 0) {
+  const a = areas[key] = { id, doc: null, months: new Map(), unsubs: [], pending: false, loaded: false, failed: false };
+  const onErr = err => { if (!a.failed && areas[key] === a) { a.failed = true; areaError(key, id, err, attempt); } };
+  a.unsubs.push(F.onSnapshot(F.doc(db, 'ledgers', id), s => {
+    a.doc = s.exists() ? s.data() : null;
+    refresh();
+  }, onErr));
+  a.unsubs.push(F.onSnapshot(F.collection(db, 'ledgers', id, 'months'), { includeMetadataChanges: true }, s => {
+    a.months = new Map(s.docs.map(d => [d.id, d.data().txs || {}]));
+    a.pending = s.metadata.hasPendingWrites;
+    a.loaded = true;
+    refresh();
+  }, onErr));
+}
+
+function areaError(key, id, err, attempt) {
+  console.warn(key, err);
+  stopArea(key);
+  // logo após criar/entrar, o servidor pode ainda não ter confirmado: tenta de novo algumas vezes
+  if (err.code === 'permission-denied' && attempt < 3) {
+    setTimeout(() => {
+      const still = key === 'family' ? profile.familyId === id : me && id === 'u_' + me.uid;
+      if (still && !areas[key]) watchArea(key, id, attempt + 1);
+    }, 1000 * 2 ** attempt);
+    return;
+  }
+  if (key === 'family' && err.code === 'permission-denied' && me) {
+    // foi removido da família (ou ela foi apagada)
+    F.setDoc(F.doc(db, 'users', me.uid), { familyId: null }, { merge: true }).catch(() => {});
+    if (area === 'family') { area = 'personal'; lsSet(AREA_KEY, area); }
+    alert('Você não faz mais parte da família. Seus dados pessoais continuam normalmente.');
+    refresh();
+  }
+}
+
+// recalcula a visão da área aberta e redesenha
+function refresh() {
+  if (area === 'family' && profileLoaded && !profile.familyId) { area = 'personal'; }
+  syncRequestWatch();
+  const a = areas[area];
+  const txs = [];
+  if (a) for (const monthTxs of a.months.values())
+    for (const [id, t] of Object.entries(monthTxs)) txs.push({ ...t, id });
+  state = { categories: a?.doc?.categories || DEFAULT_CATS, transactions: txs };
+  if (editingId != null && !txs.some(t => t.id === editingId)) endEdit(true);
+  fillCatSelects();
+  render();
+  renderHeader();
+  if ($('famDlg').open) renderFam();
+}
+
+const myName = () => me?.displayName || (me?.email || '').split('@')[0] || 'Eu';
+
+function renderHeader() {
+  const fam = areas.family?.doc;
+  $('famTab').innerHTML = '👨‍👩‍👧 ' + esc(profile.familyId ? (fam?.name || 'Família') : 'Família') +
+    (requests.length ? `<span class="count">${requests.length}</span>` : profile.pending && !profile.familyId ? ' ⏳' : '');
+  $('reqCard').hidden = !requests.length;
+  $('reqInfo').textContent = requests.length === 1
+    ? `📩 ${requests[0].name || requests[0].email} pediu para entrar na família`
+    : `📩 ${requests.length} pedidos para entrar na família`;
+  document.querySelectorAll('#areaSeg button').forEach(b => b.classList.toggle('on', b.dataset.area === area));
+  $('formArea').textContent = area === 'family' ? '· ' + (fam?.name || 'Família') : '· Pessoal';
+  const pending = areas.personal?.pending || areas.family?.pending;
+  const chip = $('statusChip');
+  if (!navigator.onLine) { chip.hidden = false; chip.className = 'status-chip'; chip.textContent = '⚠ Offline'; chip.title = 'Tudo fica salvo no aparelho e é enviado quando a internet voltar.'; }
+  else if (pending) { chip.hidden = false; chip.className = 'status-chip busy'; chip.textContent = '↻ Salvando…'; chip.title = ''; }
+  else chip.hidden = true;
+  renderAccount();
+}
+addEventListener('online', renderHeader);
+addEventListener('offline', renderHeader);
+
+function renderAccount() {
+  if (!me) return;
+  $('userBtn').textContent = myName().trim()[0]?.toUpperCase() || '?';
+  const fam = areas.family?.doc;
+  $('accountInfo').textContent = `Conectado como ${myName()} (${me.email || 'sem e-mail'}). ` +
+    (profile.familyId ? `Família: ${fam?.name || '…'}.` : 'Você ainda não participa de uma família.');
+}
+
+$('areaSeg').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.area === 'family' && !profile.familyId) { openFam(); return; }
+  if (editingId != null) endEdit(true);
+  area = b.dataset.area; lsSet(AREA_KEY, area);
+  refresh();
+});
+
+// ===== Gravação na nuvem =====
+// As gravações aparecem na tela na hora (cache local) e são enviadas em segundo plano.
+const ledgerRef = (id = areas[area].id) => F.doc(db, 'ledgers', id);
+const monthRef = (date, id = areas[area].id) => F.doc(db, 'ledgers', id, 'months', date.slice(0, 7));
+const newId = () => F.doc(F.collection(db, 'ids')).id;
+const txData = t => ({ type: t.type, desc: t.desc, category: t.category, amount: t.amount, date: t.date,
+  by: t.by || me.uid, at: t.at || Date.now() });
+function fail(e) {
+  console.error(e);
+  alert('Não foi possível salvar: ' + (e.code === 'permission-denied' ? 'sem permissão para esta área.' : (e.code || e.message)));
+}
+function commit(batch) { batch.commit().catch(fail); }
+
+function addTxs(list, ledgerId) {
+  // em lotes de até 400 gravações
+  for (let i = 0; i < list.length; i += 400) {
+    const b = F.writeBatch(db);
+    list.slice(i, i + 400).forEach(t => b.set(monthRef(t.date, ledgerId), { txs: { [t.id || newId()]: txData(t) } }, { merge: true }));
+    commit(b);
+  }
+}
+function updateTx(old, t) {
+  const b = F.writeBatch(db);
+  if (old.date.slice(0, 7) !== t.date.slice(0, 7)) b.update(monthRef(old.date), { [`txs.${old.id}`]: F.deleteField() });
+  b.set(monthRef(t.date), { txs: { [old.id]: txData(t) } }, { merge: true });
+  commit(b);
+}
+function deleteTx(t) {
+  F.updateDoc(monthRef(t.date), { [`txs.${t.id}`]: F.deleteField() }).catch(fail);
+}
+function setTxsCategory(list, name) {
+  const byMonth = {};
+  list.forEach(t => { (byMonth[t.date.slice(0, 7)] ||= {})[`txs.${t.id}.category`] = name; });
+  const b = F.writeBatch(db);
+  Object.entries(byMonth).forEach(([m, fields]) => b.update(F.doc(db, 'ledgers', areas[area].id, 'months', m), fields));
+  commit(b);
+}
+function saveCategories(cats) {
+  F.setDoc(ledgerRef(), { categories: cats }, { merge: true }).catch(fail);
+}
+
+// ===== Tela principal =====
+const catColor = name => COLORS[state.categories.findIndex(c => c.name === name) % COLORS.length] || '#888';
+function monthTx(key) { return state.transactions.filter(t => t.date.startsWith(key)); }
+function totals(list) {
+  let i = 0, o = 0;
+  list.forEach(t => t.type === 'receita' ? i += t.amount : o += t.amount);
+  return { i, o, b: i - o };
+}
+
+const NEW = '__nova__';
+function catOptions(type, selected) {
+  return state.categories.filter(c => c.type === type)
+    .map(c => `<option${c.name === selected ? ' selected' : ''}>${esc(c.name)}</option>`).join('') +
+    `<option value="${NEW}">+ Nova categoria…</option>`;
+}
+// pergunta o nome e cria a categoria; devolve o nome ou null se cancelado
+function createCategory(type) {
+  const name = (prompt(`Nome da nova categoria de ${type}:`) || '').trim();
+  if (!name) return null;
+  const existing = state.categories.find(c => c.name.toLowerCase() === name.toLowerCase());
+  if (existing) {
+    if (existing.type !== type) { alert(`"${existing.name}" já existe como categoria de ${existing.type}.`); return null; }
+    return existing.name;
+  }
+  state.categories = [...state.categories, { name, type, limit: 0 }];
+  saveCategories(state.categories);
+  return name;
+}
+
+function fillCatSelects() {
+  const f = $('fCat'), prev = f.value;
+  f.innerHTML = catOptions(txType, prev);
+  if (prev && prev !== NEW && [...f.options].some(o => o.value === prev)) f.value = prev;
+  const fc = $('filterCat'), v = fc.value;
+  fc.innerHTML = '<option value="">Todas as categorias</option>' +
+    state.categories.map(c => `<option>${esc(c.name)}</option>`).join('');
+  fc.value = v;
+}
+
+function render() {
+  const key = ym(cur);
+  const ml = cur.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+  $('monthLabel').textContent = ml[0].toUpperCase() + ml.slice(1);
+  const list = monthTx(key);
+  const t = totals(list);
+  $('sumIn').textContent = brl(t.i);
+  $('sumOut').textContent = brl(t.o);
+  $('sumBal').textContent = brl(t.b); $('sumBal').className = 'value ' + (t.b >= 0 ? 'pos' : 'neg');
+  const acc = totals(state.transactions.filter(x => x.date.slice(0, 7) <= key)).b;
+  $('sumTotal').textContent = brl(acc); $('sumTotal').className = 'value ' + (acc >= 0 ? 'pos' : 'neg');
+
+  // gastos por categoria
+  const byCat = {};
+  list.filter(x => x.type === 'despesa').forEach(x => byCat[x.category] = (byCat[x.category] || 0) + x.amount);
+  const entries = Object.entries(byCat).sort((a, b) => b[1] - a[1]);
+  const max = entries.length ? entries[0][1] : 0;
+  $('catChart').innerHTML = entries.length ? entries.map(([c, v]) => `
+    <div class="bar-row"><span><span class="dot" style="background:${catColor(c)}"></span>${esc(c)}</span>
+    <div class="bar"><div style="width:${v / max * 100}%;background:${catColor(c)}"></div></div>
+    <span class="num" style="text-align:right">${brl(v)} <span class="muted">${Math.round(v / t.o * 100)}%</span></span></div>`).join('')
+    : '<div class="empty">Nenhuma despesa neste mês.</div>';
+
+  // orçamentos
+  const withLimit = state.categories.filter(c => c.type === 'despesa' && c.limit > 0);
+  $('budgets').innerHTML = withLimit.length ? withLimit.map(c => {
+    const spent = byCat[c.name] || 0, pct = spent / c.limit * 100;
+    const color = pct >= 100 ? 'var(--red)' : pct >= 80 ? 'var(--amber)' : 'var(--green)';
+    return `<div class="budget-row"><div class="top"><span>${esc(c.name)}</span>
+      <span>${brl(spent)} / ${brl(c.limit)} <b style="color:${color}">${Math.round(pct)}%</b></span></div>
+      <div class="bar"><div style="width:${Math.min(pct, 100)}%;background:${color}"></div></div></div>`;
+  }).join('') : '<div class="empty">Defina limites mensais em "Categorias e limites".</div>';
+
+  // histórico 6 meses
+  const months = [];
+  for (let k = 5; k >= 0; k--) months.push(new Date(cur.getFullYear(), cur.getMonth() - k, 1));
+  const hs = months.map(d => ({ d, ...totals(monthTx(ym(d))) }));
+  const hmax = Math.max(1, ...hs.map(h => Math.max(h.i, h.o)));
+  // desenha na largura real do container para o texto não encolher no celular
+  const W = Math.max(280, $('history').clientWidth || 600), bw = W / 6;
+  const H = W < 500 ? 140 : 180, barW = Math.min(20, bw / 2 - 4);
+  const fmtBal = v => bw < 80
+    ? (v < 0 ? '−' : '') + Math.abs(v).toLocaleString('pt-BR', { notation: 'compact', maximumFractionDigits: 1 })
+    : brl(v).replace(/,\d\d$/, '');
+  $('history').innerHTML = `<svg viewBox="0 0 ${W} ${H + 40}" style="width:100%;height:auto;display:block">
+    ${hs.map((h, k) => {
+      const x = k * bw + bw / 2, hi = h.i / hmax * H, ho = h.o / hmax * H;
+      return `<rect x="${x - barW - 2}" y="${H - hi}" width="${barW}" height="${hi}" rx="3" fill="var(--green)"><title>Receitas: ${brl(h.i)}</title></rect>
+        <rect x="${x + 2}" y="${H - ho}" width="${barW}" height="${ho}" rx="3" fill="var(--red)"><title>Despesas: ${brl(h.o)}</title></rect>
+        <text x="${x}" y="${H + 16}" text-anchor="middle" font-size="12" fill="var(--muted)">${h.d.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '')}</text>
+        <text x="${x}" y="${H + 32}" text-anchor="middle" font-size="11" fill="${h.b >= 0 ? 'var(--green)' : 'var(--red)'}">${fmtBal(h.b)}</text>`;
+    }).join('')}
+    <line x1="0" x2="${W}" y1="${H}" y2="${H}" stroke="var(--border)"/></svg>
+    <div class="muted"><span class="dot" style="background:var(--green)"></span>Receitas &nbsp; <span class="dot" style="background:var(--red)"></span>Despesas &nbsp; (número abaixo = saldo)</div>`;
+
+  // tabela
+  const famInfo = area === 'family' ? (areas.family?.doc?.memberInfo || {}) : null;
+  const byName = uid => famInfo && famInfo[uid] ? ` <span class="by">· ${esc(String(famInfo[uid].name || '').split(' ')[0])}</span>` : '';
+  const q = $('search').value.toLowerCase(), fc = $('filterCat').value, ft = $('filterType').value;
+  const rows = list.filter(x => (!q || x.desc.toLowerCase().includes(q)) && (!fc || x.category === fc) && (!ft || x.type === ft))
+    .sort((a, b) => b.date.localeCompare(a.date) || (b.at || 0) - (a.at || 0));
+  $('txBody').innerHTML = rows.length ? rows.map(x => `<tr${x.id === editingId ? ' class="editing"' : ''}>
+    <td class="c-date">${x.date.split('-').reverse().join('/')}</td>
+    <td class="c-desc">${esc(x.desc)}${byName(x.by)}</td>
+    <td class="c-cat"><span class="dot" style="background:${catColor(x.category)}"></span><select class="cat-sel" data-id="${x.id}" title="Alterar categoria">${catOptions(x.type, x.category)}</select></td>
+    <td class="num ${x.type === 'receita' ? 'pos' : 'neg'}">${x.type === 'receita' ? '+' : '−'} ${brl(x.amount)}</td>
+    <td class="c-act" style="white-space:nowrap"><button class="icon edit" data-edit="${x.id}" title="Editar">✎</button><button class="icon" data-del="${x.id}" title="Excluir">✕</button></td></tr>`).join('')
+    : `<tr><td colspan="5" class="empty">${areas[area]?.loaded === false ? 'Carregando…' : 'Nenhuma transação.'}</td></tr>`;
+}
+
+// ===== Formulário =====
+function setType(t) {
+  txType = t;
+  document.querySelectorAll('#typeSeg button').forEach(x => x.classList.toggle('on', x.dataset.t === t));
+  fillCatSelects();
+}
+$('typeSeg').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (b) setType(b.dataset.t);
+});
+
+// edição de lançamento: carrega no formulário e troca o botão para "Salvar"
+function startEdit(t) {
+  editingId = t.id;
+  setType(t.type);
+  $('fDesc').value = t.desc;
+  $('fCat').value = t.category;
+  $('fVal').value = t.amount.toFixed(2).replace('.', ',');
+  $('fDate').value = t.date;
+  $('formTitle').textContent = 'Editar transação';
+  $('submitBtn').textContent = 'Salvar';
+  $('cancelEdit').hidden = false;
+  $('recurRow').hidden = true;
+  $('txForm').closest('.card').classList.add('editing');
+  $('txForm').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  $('fDesc').focus();
+  render();
+}
+function endEdit(silent) {
+  editingId = null;
+  $('fDesc').value = ''; $('fVal').value = '';
+  $('formTitle').textContent = 'Nova transação';
+  $('submitBtn').textContent = 'Adicionar';
+  $('cancelEdit').hidden = true;
+  $('recurRow').hidden = false;
+  $('txForm').closest('.card').classList.remove('editing');
+  if (!silent) render();
+}
+$('cancelEdit').onclick = () => endEdit();
+$('fab').onclick = () => {
+  if (editingId != null) endEdit();
+  $('txForm').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  $('fDesc').focus({ preventScroll: true });
+};
+let lastW = innerWidth, resizeT;
+addEventListener('resize', () => {
+  if (innerWidth === lastW) return; // ignora a barra do navegador do celular aparecendo/sumindo
+  lastW = innerWidth; clearTimeout(resizeT); resizeT = setTimeout(render, 150);
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && editingId != null && !document.querySelector('dialog[open]')) endEdit(); });
+
+$('fCat').addEventListener('change', e => {
+  if (e.target.value !== NEW) return;
+  const name = createCategory(txType);
+  fillCatSelects();
+  e.target.value = name || e.target.options[0].value;
+  render();
+});
+
+// alterar categoria de um lançamento direto na tabela
+$('txBody').addEventListener('change', e => {
+  const sel = e.target.closest('.cat-sel'); if (!sel) return;
+  const t = state.transactions.find(x => x.id === sel.dataset.id); if (!t) return;
+  let name = sel.value;
+  if (!name) { sel.value = t.category; return; }
+  if (name === NEW) {
+    name = createCategory(t.type);
+    if (!name) { sel.value = t.category; return; }
+    fillCatSelects();
+  }
+  const others = state.transactions.filter(x => x !== t && x.desc === t.desc && x.category === t.category && x.type === t.type);
+  const move = [t];
+  if (others.length && confirm(`Existem outros ${others.length} lançamento(s) "${t.desc}" em "${t.category}". Mover todos para "${name}" também?`))
+    move.push(...others);
+  setTxsCategory(move, name);
+});
+
+$('txForm').addEventListener('submit', e => {
+  e.preventDefault();
+  if (!areas[area]) return;
+  const amount = parseVal($('fVal').value);
+  if (!(amount > 0)) { alert('Informe um valor válido.'); return; }
+  const base = { type: txType, desc: $('fDesc').value.trim(), category: $('fCat').value, amount };
+  if (editingId != null) {
+    const old = state.transactions.find(x => x.id === editingId);
+    if (old) updateTx(old, { ...old, ...base, date: $('fDate').value, at: Date.now() });
+    endEdit();
+    return;
+  }
+  const [y, m, d] = $('fDate').value.split('-').map(Number);
+  const n = $('fRecur').checked ? Math.max(1, +$('fRecurN').value || 1) : 0;
+  const list = [];
+  for (let k = 0; k <= n; k++) {
+    const last = new Date(y, m - 1 + k + 1, 0).getDate();
+    const dt = new Date(y, m - 1 + k, Math.min(d, last));
+    list.push({ ...base, date: ym(dt) + '-' + String(dt.getDate()).padStart(2, '0'), at: Date.now() + k });
+  }
+  addTxs(list);
+  $('fDesc').value = ''; $('fVal').value = ''; $('fRecur').checked = false;
+  $('fDesc').focus();
+});
+
+$('txBody').addEventListener('click', e => {
+  const editId = e.target.dataset.edit;
+  if (editId) { const t = state.transactions.find(x => x.id === editId); if (t) startEdit(t); return; }
+  const id = e.target.dataset.del; if (!id) return;
+  const t = state.transactions.find(x => x.id === id); if (!t) return;
+  if (!confirm('Excluir esta transação?')) return;
+  if (id === editingId) endEdit(true);
+  deleteTx(t);
+});
+
+$('prev').onclick = () => { cur.setMonth(cur.getMonth() - 1); render(); };
+$('next').onclick = () => { cur.setMonth(cur.getMonth() + 1); render(); };
+$('today').onclick = () => { cur = new Date(); cur.setDate(1); render(); };
+['search', 'filterCat', 'filterType'].forEach(id => $(id).addEventListener('input', render));
+
+// ===== Categorias =====
+// edita uma cópia; salva ao fechar. Lançamentos de categorias renomeadas/removidas são movidos na hora.
+let dlgCats = [];
+function renderCatList() {
+  $('catList').innerHTML = dlgCats.map((c, i) => `<div class="cat-item">
+    <span class="dot" style="background:${COLORS[i % COLORS.length]}"></span>
+    <input value="${esc(c.name)}" data-i="${i}" data-k="name">
+    ${c.type === 'despesa' ? `<input type="number" min="0" step="10" value="${c.limit}" data-i="${i}" data-k="limit" title="Limite mensal">` : '<span class="muted" style="width:110px">receita</span>'}
+    <button class="icon" data-rm="${i}" title="Remover">✕</button></div>`).join('');
+}
+$('editCats').onclick = () => {
+  dlgCats = structuredClone(state.categories);
+  $('catDlgArea').textContent = area === 'family' ? (areas.family?.doc?.name || 'Família') : 'Pessoal';
+  renderCatList(); $('catDlg').showModal();
+};
+$('catList').addEventListener('change', e => {
+  const i = e.target.dataset.i, k = e.target.dataset.k; if (i == null) return;
+  if (k === 'name') {
+    const old = dlgCats[i].name, nw = e.target.value.trim();
+    if (!nw || dlgCats.some(c => c.name === nw)) { e.target.value = old; return; }
+    dlgCats[i].name = nw;
+    const used = state.transactions.filter(t => t.category === old);
+    if (used.length) setTxsCategory(used, nw);
+  } else dlgCats[i].limit = Math.max(0, +e.target.value || 0);
+});
+$('catList').addEventListener('click', e => {
+  const i = e.target.dataset.rm; if (i == null) return;
+  const c = dlgCats[i];
+  const used = state.transactions.filter(t => t.category === c.name);
+  if (used.length) {
+    const alts = dlgCats.filter(x => x.type === c.type && x !== c);
+    if (!alts.length) { alert('Crie outra categoria do mesmo tipo antes de remover esta.'); return; }
+    const target = (alts.find(x => /^outr/i.test(x.name)) || alts[0]).name;
+    if (!confirm(`${used.length} lançamento(s) usam "${c.name}". Eles serão movidos para "${target}". Continuar?`)) return;
+    setTxsCategory(used, target);
+  }
+  dlgCats.splice(i, 1); renderCatList();
+});
+$('addCat').onclick = () => {
+  const name = $('newCat').value.trim();
+  if (!name || dlgCats.some(c => c.name === name)) return;
+  dlgCats.push({ name, type: $('newCatType').value, limit: 0 });
+  $('newCat').value = ''; renderCatList();
+};
+$('catDlg').addEventListener('close', () => {
+  if (JSON.stringify(dlgCats) !== JSON.stringify(state.categories)) {
+    state.categories = dlgCats;
+    saveCategories(dlgCats);
+  }
+  fillCatSelects(); render();
+});
+$('closeDlg').onclick = () => $('catDlg').close();
+
+// ===== Família =====
+const CODE_CHARS = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ'; // sem 0/O, 1/I/L para não confundir
+function genCode() {
+  const r = crypto.getRandomValues(new Uint32Array(12));
+  const s = [...r].map(n => CODE_CHARS[n % CODE_CHARS.length]).join('');
+  return `${s.slice(0, 4)}-${s.slice(4, 8)}-${s.slice(8)}`;
+}
+function normCode(raw) {
+  const s = String(raw).toUpperCase().replace(/[^0-9A-Z]/g, '');
+  return s.length === 12 ? `${s.slice(0, 4)}-${s.slice(4, 8)}-${s.slice(8)}` : null;
+}
+async function uniqueCode() {
+  for (;;) {
+    const c = genCode();
+    const s = await F.getDoc(F.doc(db, 'invites', c));
+    if (!s.exists()) return c;
+  }
+}
+function famMsg(text) { const m = $('famMsg'); if (m) { m.hidden = !text; m.textContent = text || ''; } }
+
+function openFam() { renderFam(); $('famDlg').showModal(); }
+$('openFam').onclick = openFam;
+$('reqOpen').onclick = () => { famView = 'requests'; openFam(); };
+$('famClose').onclick = () => $('famDlg').close();
+
+const fmtWhen = ms => ms ? new Date(ms).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '';
+
+function renderFam() {
+  const body = $('famBody');
+  const fam = areas.family, d = fam?.doc;
+  if (!profile.familyId && profile.pending?.fid) {
+    body.innerHTML = `
+      <h2>Família</h2>
+      <div class="wait-box">⏳ <b>Pedido enviado para ${esc(profile.pending.name || 'a família')}.</b><br>
+        <span class="muted">Um administrador da família precisa aprovar sua entrada. Assim que aprovar, a família aparece aqui automaticamente.</span></div>
+      <button class="danger" data-act="cancelReq">Cancelar pedido</button>
+      <div class="auth-msg" id="famMsg" hidden style="margin-top:12px"></div>`;
+    return;
+  }
+  if (!profile.familyId) {
+    body.innerHTML = `
+      <h2>Família</h2>
+      <p class="muted">Na família, todos os membros veem e lançam os mesmos gastos. Sua área Pessoal continua só sua.</p>
+      <h3>Entrar numa família</h3>
+      <p class="muted" style="margin-top:0">Digite o código que alguém da família te enviou. Um administrador vai confirmar sua entrada.</p>
+      <div class="fam-form"><input id="joinCode" placeholder="XXXX-XXXX-XXXX" autocapitalize="characters" autocomplete="off" spellcheck="false"><button class="primary" data-act="join">Pedir para entrar</button></div>
+      <h3>Ou criar uma família</h3>
+      <div class="fam-form"><input id="famName" placeholder="Nome (ex.: Família Silva)"><button data-act="create">Criar</button></div>
+      <div class="auth-msg" id="famMsg" hidden style="margin-top:12px"></div>`;
+    return;
+  }
+  if (!d) { body.innerHTML = '<h2>Família</h2><p class="muted">Carregando…</p>'; return; }
+  const uid = me.uid, isAdm = d.members[uid] === 'admin';
+  if (!isAdm) famView = 'members';
+  const info = d.memberInfo || {};
+  const ids = Object.keys(d.members).sort((a, b) =>
+    (d.members[a] === 'admin' ? 0 : 1) - (d.members[b] === 'admin' ? 0 : 1) || String(info[a]?.name).localeCompare(String(info[b]?.name)));
+  const tabs = isAdm ? `<div class="seg plain fam-tabs">
+      <button data-act="tab" data-view="members" class="${famView === 'members' ? 'on' : ''}">Membros</button>
+      <button data-act="tab" data-view="requests" class="${famView === 'requests' ? 'on' : ''}">Pedidos${requests.length ? `<span class="count">${requests.length}</span>` : ''}</button>
+    </div>` : '';
+  if (famView === 'requests') {
+    body.innerHTML = `
+      <h2>${esc(d.name || 'Família')}</h2>${tabs}
+      <p class="muted">Pessoas que digitaram o código de convite. Só aprove quem você conhece: ao aprovar, a pessoa passa a ver e lançar nos gastos da família.</p>
+      ${requests.length ? requests.map(r => `<div class="member"><div class="who"><b>${esc(r.name || 'Sem nome')}</b>
+          <span class="muted">${esc(r.email || 'sem e-mail')} · pediu em ${fmtWhen(r.at)}</span></div>
+          <span class="acts"><button class="primary" data-act="approve" data-uid="${r.uid}">Aprovar</button>
+          <button class="danger" data-act="reject" data-uid="${r.uid}">Recusar</button></span></div>`).join('')
+        : '<div class="empty">Nenhum pedido aguardando.</div>'}
+      <p class="muted" style="margin-top:14px">Recebeu um pedido de quem você não conhece? Recuse e gere um novo código na aba Membros.</p>
+      <div class="auth-msg" id="famMsg" hidden style="margin-top:12px"></div>`;
+    return;
+  }
+  body.innerHTML = `
+    <h2>${esc(d.name || 'Família')}</h2>${tabs}
+    ${isAdm ? `<div class="fam-form" style="margin-bottom:14px"><input id="famRename" value="${esc(d.name || '')}"><button data-act="rename">Renomear</button></div>` : ''}
+    <h3>Código de convite</h3>
+    <div class="code-box"><span class="code">${esc(d.inviteCode)}</span>
+      <span class="actions"><button data-act="copy">Copiar</button>${navigator.share ? '<button data-act="share">Enviar</button>' : ''}</span></div>
+    <p class="muted">Envie este código para quem deve participar. A pessoa digita o código no app e um administrador aprova a entrada na aba Pedidos.
+      ${isAdm ? 'Se o código vazar, gere um novo: o antigo deixa de funcionar.' : ''}</p>
+    ${isAdm ? '<button data-act="regen">Gerar novo código</button>' : ''}
+    <h3>Membros (${ids.length})</h3>
+    ${ids.map(x => {
+      const role = d.members[x], self = x === uid;
+      return `<div class="member"><div class="who"><b>${esc(info[x]?.name || 'Sem nome')}${self ? ' (você)' : ''}</b><span class="muted">${esc(info[x]?.email || '')}</span></div>
+        <span class="badge ${role === 'admin' ? 'admin' : ''}">${role === 'admin' ? 'Administrador' : 'Membro'}</span>
+        ${isAdm && !self ? `<span class="acts">
+          ${role === 'admin' ? `<button data-act="demote" data-uid="${x}">Tirar admin</button>` : `<button data-act="promote" data-uid="${x}">Tornar admin</button>`}
+          <button class="danger" data-act="remove" data-uid="${x}">Remover</button></span>` : ''}
+      </div>`;
+    }).join('')}
+    <div style="margin-top:16px"><button class="danger" data-act="leave">${ids.length === 1 ? 'Excluir família' : 'Sair da família'}</button></div>
+    <div class="auth-msg" id="famMsg" hidden style="margin-top:12px"></div>`;
+}
+
+$('famBody').addEventListener('click', async e => {
+  const b = e.target.closest('button[data-act]'); if (!b) return;
+  const act = b.dataset.act, x = b.dataset.uid;
+  const d = areas.family?.doc, uid = me.uid;
+  famMsg('');
+  try {
+    if (act === 'tab') {
+      famView = b.dataset.view; renderFam();
+    } else if (act === 'join') {
+      const code = normCode($('joinCode').value);
+      if (!code) { famMsg('O código tem 12 letras/números, no formato XXXX-XXXX-XXXX.'); return; }
+      b.disabled = true; b.textContent = 'Enviando…';
+      const inv = await F.getDoc(F.doc(db, 'invites', code));
+      if (!inv.exists()) { famMsg('Código não encontrado. Confira com quem te enviou (ele pode ter sido trocado).'); b.disabled = false; b.textContent = 'Pedir para entrar'; return; }
+      const { ledgerId: fid, name: famName } = inv.data();
+      // só cria um pedido; quem adiciona à família é um administrador
+      await F.setDoc(F.doc(db, 'ledgers', fid, 'requests', uid), { name: myName(), email: me.email || '', code, at: Date.now() });
+      await F.setDoc(F.doc(db, 'users', uid), { pending: { fid, name: famName || 'família', at: Date.now() } }, { merge: true });
+    } else if (act === 'cancelReq') {
+      if (!confirm('Cancelar o pedido para entrar na família?')) return;
+      const fid = profile.pending.fid;
+      stopPending();
+      await F.setDoc(F.doc(db, 'users', uid), { pending: null }, { merge: true });
+      F.deleteDoc(F.doc(db, 'ledgers', fid, 'requests', uid)).catch(() => {});
+    } else if (act === 'approve') {
+      const r = requests.find(q => q.uid === x); if (!r) return;
+      b.disabled = true;
+      const batch = F.writeBatch(db);
+      batch.update(ledgerRef(areas.family.id), { [`members.${x}`]: 'member', [`memberInfo.${x}`]: { name: r.name || '', email: r.email || '' } });
+      batch.delete(F.doc(db, 'ledgers', areas.family.id, 'requests', x));
+      await batch.commit();
+    } else if (act === 'reject') {
+      const r = requests.find(q => q.uid === x); if (!r) return;
+      if (!confirm(`Recusar o pedido de ${r.name || r.email}?`)) return;
+      await F.deleteDoc(F.doc(db, 'ledgers', areas.family.id, 'requests', x));
+    } else if (act === 'create') {
+      const name = $('famName').value.trim();
+      if (!name) { famMsg('Dê um nome para a família.'); $('famName').focus(); return; }
+      b.disabled = true;
+      const fid = F.doc(F.collection(db, 'ledgers')).id, code = await uniqueCode();
+      const batch = F.writeBatch(db);
+      batch.set(F.doc(db, 'ledgers', fid), {
+        type: 'family', name, createdBy: uid, createdAt: Date.now(), inviteCode: code, categories: DEFAULT_CATS,
+        members: { [uid]: 'admin' }, memberInfo: { [uid]: { name: myName(), email: me.email || '' } },
+      });
+      batch.set(F.doc(db, 'invites', code), { ledgerId: fid, name });
+      batch.set(F.doc(db, 'users', uid), { familyId: fid, pending: null }, { merge: true });
+      await batch.commit();
+      area = 'family'; lsSet(AREA_KEY, area);
+    } else if (act === 'copy') {
+      await navigator.clipboard.writeText(d.inviteCode);
+      b.textContent = 'Copiado ✓'; setTimeout(() => { b.textContent = 'Copiar'; }, 1500);
+    } else if (act === 'share') {
+      navigator.share({ title: 'Minhas Finanças', text: `Entre na família "${d.name}" no app Minhas Finanças com o código: ${d.inviteCode}\n${location.origin + location.pathname}` }).catch(() => {});
+    } else if (act === 'rename') {
+      const name = $('famRename').value.trim(); if (!name) return;
+      const batch = F.writeBatch(db);
+      batch.update(ledgerRef(areas.family.id), { name });
+      batch.update(F.doc(db, 'invites', d.inviteCode), { name }); // nome mostrado a quem pede para entrar
+      commit(batch);
+    } else if (act === 'regen') {
+      if (!confirm('Gerar um novo código? O código atual deixará de funcionar (quem já entrou continua na família).')) return;
+      const code = await uniqueCode();
+      const batch = F.writeBatch(db);
+      batch.delete(F.doc(db, 'invites', d.inviteCode));
+      batch.set(F.doc(db, 'invites', code), { ledgerId: areas.family.id, name: d.name });
+      batch.update(ledgerRef(areas.family.id), { inviteCode: code });
+      await batch.commit();
+    } else if (act === 'promote' || act === 'demote') {
+      F.updateDoc(ledgerRef(areas.family.id), { [`members.${x}`]: act === 'promote' ? 'admin' : 'member' }).catch(fail);
+    } else if (act === 'remove') {
+      if (!confirm(`Remover ${d.memberInfo?.[x]?.name || 'este membro'} da família? Ele deixa de ver os lançamentos da família.`)) return;
+      F.updateDoc(ledgerRef(areas.family.id), { [`members.${x}`]: F.deleteField(), [`memberInfo.${x}`]: F.deleteField() }).catch(fail);
+    } else if (act === 'leave') {
+      await leaveFamily();
+    }
+  } catch (err) {
+    console.error(err);
+    famMsg('Não foi possível concluir: ' + (err.code === 'permission-denied' ? 'sem permissão.' : (err.code || err.message)));
+    b.disabled = false;
+  }
+});
+
+async function leaveFamily() {
+  const fam = areas.family, d = fam.doc, uid = me.uid;
+  const others = Object.keys(d.members).filter(x => x !== uid);
+  if (!others.length) {
+    if (!confirm(`Excluir a família "${d.name}"? Todos os lançamentos da família serão apagados. Sua área Pessoal não é afetada.`)) return;
+    const batch = F.writeBatch(db);
+    for (const m of fam.months.keys()) batch.delete(F.doc(db, 'ledgers', fam.id, 'months', m));
+    for (const r of requests) batch.delete(F.doc(db, 'ledgers', fam.id, 'requests', r.uid));
+    batch.delete(F.doc(db, 'invites', d.inviteCode));
+    batch.delete(ledgerRef(fam.id));
+    batch.set(F.doc(db, 'users', uid), { familyId: null }, { merge: true });
+    stopArea('family');
+    await batch.commit();
+  } else {
+    if (d.members[uid] === 'admin' && !others.some(x => d.members[x] === 'admin')) {
+      famMsg('Você é o único administrador. Antes de sair, toque em "Tornar admin" em outro membro.');
+      return;
+    }
+    if (!confirm(`Sair da família "${d.name}"? Você deixa de ver os lançamentos dela. Para voltar, vai precisar do código.`)) return;
+    stopArea('family');
+    await F.updateDoc(ledgerRef(fam.id), { [`members.${uid}`]: F.deleteField(), [`memberInfo.${uid}`]: F.deleteField() });
+    await F.setDoc(F.doc(db, 'users', uid), { familyId: null }, { merge: true });
+  }
+  area = 'personal'; lsSet(AREA_KEY, area);
+  $('famDlg').close();
+  refresh();
+}
+
+// ===== Desbloqueio com digital (WebAuthn) =====
+// Cria uma credencial no próprio aparelho que só abre com a biometria (ou o PIN de bloqueio
+// do aparelho). É um bloqueio local: protege contra quem pegar o aparelho já desbloqueado.
+const LOCK_KEY = 'financas-lock'; // { uid: { credId, after } } ou { uid: { declined: true } }
+const lockAll = () => { try { return JSON.parse(lsGet(LOCK_KEY)) || {}; } catch { return {}; } };
+const lockCfg = () => (me && lockAll()[me.uid]) || {};
+const lockOn = () => !!lockCfg().credId;
+function setLockCfg(cfg) {
+  const all = lockAll();
+  if (cfg) all[me.uid] = cfg; else delete all[me.uid];
+  lsSet(LOCK_KEY, JSON.stringify(all));
+}
+const b64u = buf => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+const unb64u = s => Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
+const randBytes = n => crypto.getRandomValues(new Uint8Array(n));
+
+let bioAvailable = false;
+const bioReady = (async () => {
+  try { bioAvailable = !!window.PublicKeyCredential && await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable(); } catch {}
+})();
+
+let locked = false, bioBusy = false, hiddenAt = 0, graceUntil = 0;
+
+async function enableBio() {
+  bioBusy = true;
+  try {
+    const cred = await navigator.credentials.create({ publicKey: {
+      challenge: randBytes(32),
+      rp: { name: 'Minhas Finanças' },
+      user: { id: new TextEncoder().encode(me.uid), name: me.email || myName(), displayName: myName() },
+      pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
+      authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'discouraged' },
+      attestation: 'none', timeout: 60000,
+    } });
+    setLockCfg({ credId: b64u(cred.rawId), after: 60 });
+  } finally { bioBusy = false; graceUntil = Date.now() + 2000; }
+}
+
+function lockNow() {
+  locked = true;
+  document.querySelectorAll('dialog[open]').forEach(d => d.close());
+  $('lockWho').textContent = me ? `Conta: ${me.email || myName()}` : '';
+  $('lockMsg').hidden = true;
+  show('lock');
+  unlock(true); // tenta abrir o pedido da digital direto (alguns aparelhos exigem um toque)
+}
+
+async function unlock(auto) {
+  if (bioBusy) return;
+  const cfg = lockCfg();
+  if (!cfg.credId) { locked = false; show('app'); return; }
+  bioBusy = true; $('lockMsg').hidden = true;
+  try {
+    const a = await navigator.credentials.get({ publicKey: {
+      challenge: randBytes(32),
+      allowCredentials: [{ type: 'public-key', id: unb64u(cfg.credId), transports: ['internal'] }],
+      userVerification: 'required', timeout: 60000,
+    } });
+    // confere que o aparelho realmente verificou a pessoa (bit "UV" dos dados do autenticador)
+    if (!(new Uint8Array(a.response.authenticatorData)[32] & 0x04)) throw new Error('sem verificação');
+    locked = false; show('app'); render();
+  } catch (e) {
+    if (!auto || e.name !== 'NotAllowedError') {
+      const m = $('lockMsg'); m.hidden = false; m.className = 'auth-msg' + (e.name === 'NotAllowedError' ? ' info' : '');
+      m.textContent = e.name === 'NotAllowedError'
+        ? 'Desbloqueio cancelado. Toque em "Desbloquear com digital" para tentar de novo.'
+        : 'Não foi possível usar a digital neste aparelho. Entre com e-mail e senha.';
+    }
+  } finally { bioBusy = false; hiddenAt = 0; graceUntil = Date.now() + 2000; }
+}
+$('unlockBtn').onclick = () => unlock(false);
+
+// bloqueia de novo depois de um tempo fora do app
+document.addEventListener('visibilitychange', () => {
+  if (!me || !lockOn() || bioBusy || Date.now() < graceUntil) return; // o próprio pedido da digital pode esconder a página
+  if (document.visibilityState === 'hidden') { if (!locked) hiddenAt = Date.now(); }
+  else if (!locked && hiddenAt && Date.now() - hiddenAt >= (lockCfg().after ?? 60) * 1000) lockNow();
+});
+
+// pergunta uma vez, depois do primeiro login neste aparelho
+function offerBio() {
+  if (!bioAvailable || lockOn() || lockCfg().declined) return;
+  setTimeout(() => { if (me && !locked && !document.querySelector('dialog[open]')) { $('bioDlgMsg').hidden = true; $('bioDlg').showModal(); } }, 1200);
+}
+$('bioLater').onclick = () => { setLockCfg({ declined: true }); $('bioDlg').close(); };
+$('bioYes').onclick = async () => {
+  try { await enableBio(); $('bioDlg').close(); }
+  catch (e) {
+    const m = $('bioDlgMsg'); m.hidden = false;
+    m.textContent = e.name === 'NotAllowedError' ? 'Cancelado. Toque em "Ativar" para tentar de novo.' : 'Não foi possível ativar: ' + (e.message || e.name);
+  }
+};
+
+function renderBio() {
+  const on = lockOn();
+  $('bioActions').hidden = !bioAvailable;
+  $('bioStatus').textContent = !bioAvailable
+    ? 'Este aparelho/navegador não oferece digital ou reconhecimento facial para apps da web.'
+    : on ? 'Ativado: o app pede a digital (ou o rosto) do aparelho para abrir.' : 'Desativado.';
+  $('bioToggle').textContent = on ? 'Desativar' : 'Ativar digital';
+  $('bioToggle').className = on ? 'danger' : 'primary';
+  $('bioAfterRow').hidden = !on;
+  $('bioAfter').value = String(lockCfg().after ?? 60);
+}
+$('bioToggle').onclick = async () => {
+  if (lockOn()) {
+    if (!confirm('Desativar o desbloqueio com digital neste aparelho?')) return;
+    setLockCfg({ declined: true });
+  } else {
+    try { await enableBio(); }
+    catch (e) { if (e.name !== 'NotAllowedError') alert('Não foi possível ativar: ' + (e.message || e.name)); }
+  }
+  renderBio();
+};
+$('bioAfter').onchange = () => setLockCfg({ ...lockCfg(), after: +$('bioAfter').value });
+
+// ===== Conta =====
+$('userBtn').onclick = $('openAccount').onclick = () => {
+  $('accName').value = me.displayName || '';
+  $('accEmail').textContent = me.email ? 'E-mail: ' + me.email : '';
+  renderBio();
+  $('accDlg').showModal();
+};
+$('accCancel').onclick = () => $('accDlg').close();
+$('accSave').onclick = async () => {
+  const name = $('accName').value.trim();
+  if (name && name !== me.displayName) {
+    try {
+      await A.updateProfile(me, { displayName: name });
+      if (areas.family?.doc?.memberInfo?.[me.uid])
+        F.updateDoc(ledgerRef(areas.family.id), { [`memberInfo.${me.uid}.name`]: name }).catch(fail);
+    } catch (e) { fail(e); }
+  }
+  $('accDlg').close(); renderAccount(); render();
+};
+async function logout(question) {
+  const pending = areas.personal?.pending || areas.family?.pending;
+  const msg = pending && !navigator.onLine
+    ? 'Há alterações que ainda não foram enviadas (sem internet). Se sair agora, elas serão perdidas. Sair mesmo assim?'
+    : question;
+  if (!confirm(msg)) return;
+  setLockCfg(null); // o desbloqueio com digital é por conta; ao entrar de novo, o app oferece outra vez
+  stopAll();
+  await A.signOut(auth);
+  // apaga a cópia local dos dados deste aparelho
+  try { await F.terminate(db); await F.clearIndexedDbPersistence(db); } catch {}
+  location.reload();
+}
+$('logoutBtn').onclick = () => logout('Sair da conta? Seus dados continuam salvos na nuvem; este aparelho deixa de mostrá-los até você entrar de novo.');
+$('lockLogout').onclick = () => logout('Entrar com e-mail e senha? Você vai sair da conta neste aparelho e precisará entrar de novo (os dados continuam salvos na nuvem).');
+
+// ===== Dados da versão anterior (sem login) =====
+function legacyData() {
+  try { const s = JSON.parse(lsGet(LEGACY_KEY)); return s && Array.isArray(s.transactions) && s.transactions.length ? s : null; } catch { return null; }
+}
+function checkLegacy() {
+  const s = legacyData();
+  $('legacyCard').hidden = !s || lsGet(LEGACY_DONE) === me.uid;
+  if (s) $('legacyInfo').textContent = `Este aparelho tem ${s.transactions.length} lançamento(s) da versão anterior do app, de antes do login. Quer trazê-los para a sua área Pessoal?`;
+}
+function importInto(ledgerId, cats, data, prefix) {
+  const missing = (data.categories || []).filter(c => !cats.some(x => x.name === c.name));
+  data.transactions.forEach(t => { if (!cats.some(c => c.name === t.category) && !missing.some(c => c.name === t.category)) missing.push({ name: t.category, type: t.type, limit: 0 }); });
+  if (missing.length) F.setDoc(ledgerRef(ledgerId), { categories: [...cats, ...missing] }, { merge: true }).catch(fail);
+  // id fixo por lançamento: importar de novo não duplica
+  // (ids do próprio app são mantidos, então restaurar um backup sobrescreve em vez de duplicar)
+  const idOf = t => /^[0-9A-Za-z]{20}$/.test(String(t.id)) ? String(t.id) : prefix + String(t.id).replace(/[^0-9A-Za-z]/g, '');
+  addTxs(data.transactions.map(t => ({ ...t, id: idOf(t), by: t.by || me.uid, at: t.at || t.updatedAt || Date.now() })), ledgerId);
+}
+$('legacyImport').onclick = () => {
+  const s = legacyData(), p = areas.personal; if (!s || !p) return;
+  importInto(p.id, p.doc?.categories || DEFAULT_CATS, s, 'L');
+  lsSet(LEGACY_DONE, me.uid);
+  $('legacyCard').hidden = true;
+  if (area !== 'personal') { area = 'personal'; lsSet(AREA_KEY, area); refresh(); }
+};
+$('legacyDismiss').onclick = () => {
+  if (!confirm('Não importar? Os dados antigos continuam guardados neste aparelho, mas este aviso não aparece mais.')) return;
+  lsSet(LEGACY_DONE, me.uid); $('legacyCard').hidden = true;
+};
+
+// ===== Backup =====
+function download(name, text, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text], { type }));
+  a.download = name; a.click(); URL.revokeObjectURL(a.href);
+}
+const areaSlug = () => area === 'family' ? 'familia' : 'pessoal';
+$('exportJson').onclick = () => download(`financas-${areaSlug()}-${new Date().toISOString().slice(0, 10)}.json`,
+  JSON.stringify({ area, categories: state.categories, transactions: state.transactions }, null, 2), 'application/json');
+$('exportCsv').onclick = () => {
+  const lines = ['Data;Tipo;Descrição;Categoria;Valor'];
+  [...state.transactions].sort((a, b) => a.date.localeCompare(b.date)).forEach(t =>
+    lines.push([t.date.split('-').reverse().join('/'), t.type, '"' + t.desc.replace(/"/g, '""') + '"', t.category,
+      (t.type === 'despesa' ? -t.amount : t.amount).toFixed(2).replace('.', ',')].join(';')));
+  download(`financas-${areaSlug()}.csv`, '﻿' + lines.join('\r\n'), 'text/csv');
+};
+$('importJson').onclick = () => $('fileIn').click();
+$('fileIn').onchange = async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try {
+    const data = JSON.parse(await f.text());
+    if (!Array.isArray(data.categories) || !Array.isArray(data.transactions)) throw 0;
+    const where = area === 'family' ? `na família "${areas.family?.doc?.name}"` : 'na sua área Pessoal';
+    if (confirm(`Importar ${data.transactions.length} lançamento(s) ${where}? Lançamentos já importados antes não são duplicados.`))
+      importInto(areas[area].id, state.categories, data, 'B');
+  } catch { alert('Arquivo inválido.'); }
+  e.target.value = '';
+};
+
+// ===== Instalação (PWA) =====
+const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+let installEvt = null;
+addEventListener('beforeinstallprompt', e => {
+  e.preventDefault(); installEvt = e;
+  $('installCard').hidden = false; $('installBtn').hidden = false;
+  $('installInfo').textContent = 'Instale para abrir o app pela tela inicial, em tela cheia e sem internet.';
+});
+$('installBtn').onclick = async () => {
+  if (!installEvt) return;
+  installEvt.prompt();
+  await installEvt.userChoice;
+  installEvt = null; $('installCard').hidden = true;
+};
+addEventListener('appinstalled', () => { $('installCard').hidden = true; });
+if (isIOS && !standalone && location.protocol === 'https:') {
+  $('installCard').hidden = false;
+  $('installInfo').innerHTML = 'No Safari, toque em <b>Compartilhar</b> (o quadrado com a seta para cima) e depois em <b>Adicionar à Tela de Início</b>.';
+}
+
+// ===== Versões e atualização =====
+// A versão fica no sw.js. Quando o sw.js publicado muda, o navegador baixa a versão nova
+// e deixa ela esperando; o app mostra o aviso e só troca quando o usuário aceita.
+const VERSION_KEY = 'financas-version';
+function askVersion(sw) {
+  return new Promise(resolve => {
+    const ch = new MessageChannel();
+    ch.port1.onmessage = e => resolve(e.data);
+    sw.postMessage('GET_VERSION', [ch.port2]);
+    setTimeout(() => resolve(null), 3000);
+  });
+}
+function showBar(title, changes, withActions) {
+  $('updateTitle').textContent = title;
+  $('updateChanges').innerHTML = (changes || []).map(c => `<li>${esc(c)}</li>`).join('');
+  $('updateNow').hidden = !withActions;
+  $('updateLater').textContent = withActions ? 'Depois' : 'Fechar';
+  $('updateBar').hidden = false;
+}
+let waitingSW = null;
+async function offerUpdate(sw) {
+  waitingSW = sw;
+  const info = await askVersion(sw);
+  showBar(`Nova versão disponível${info ? ': v' + info.version : ''}`, info?.changes, true);
+}
+$('updateLater').onclick = () => { $('updateBar').hidden = true; };
+$('updateNow').onclick = () => {
+  if (($('fDesc').value || $('fVal').value) &&
+      !confirm('Há um lançamento sendo digitado que ainda não foi salvo. Atualizar mesmo assim?')) return;
+  $('updateNow').disabled = true; $('updateNow').textContent = 'Atualizando…';
+  waitingSW?.postMessage('SKIP_WAITING');
+};
+
+if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  const hadController = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.register('sw.js').then(reg => {
+    if (reg.waiting && hadController) offerUpdate(reg.waiting);
+    reg.addEventListener('updatefound', () => {
+      const nw = reg.installing;
+      nw.addEventListener('statechange', () => {
+        if (nw.state === 'installed' && navigator.serviceWorker.controller) offerUpdate(nw);
+      });
+    });
+    // procura versão nova ao voltar para o app e a cada 30 min com ele aberto
+    const check = () => reg.update().catch(() => {});
+    setInterval(check, 30 * 60e3);
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') check(); });
+  }).catch(() => {});
+
+  // a versão nova assumiu (aqui ou em outra aba): recarrega para usá-la
+  let reloading = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (hadController && !reloading) { reloading = true; location.reload(); }
+  });
+
+  // mostra a versão atual e, logo após uma atualização, o que mudou
+  navigator.serviceWorker.ready.then(reg => askVersion(reg.active)).then(info => {
+    if (!info) return;
+    $('appVersion').textContent = `Versão ${info.version}`;
+    const seen = lsGet(VERSION_KEY);
+    lsSet(VERSION_KEY, info.version);
+    if (seen && seen !== info.version && $('updateBar').hidden)
+      showBar(`✓ App atualizado para v${info.version}`, info.changes, false);
+  });
+}
+
+// ===== Início =====
+$('fDate').value = new Date().toLocaleDateString('sv-SE');
+fillCatSelects();
+render();
+boot();
+</script>
+</body>
+</html>
