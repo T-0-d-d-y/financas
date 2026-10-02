@@ -8,7 +8,7 @@ window.FIREBASE_CONFIG = {
   projectId: "minhas-financas-6df1c",
   storageBucket: "minhas-financas-6df1c.firebasestorage.app",
   messagingSenderId: "1066137801721",
-  appId: "1:1066137801721:web:5c19e63dffb9da748e2328"
+  appId: "1:1066137801721:web:fcaf7c1def67b4ed8e2328"
 };
 
 // Exemplo de como fica preenchido:
