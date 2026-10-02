@@ -10,7 +10,8 @@
 <meta name="apple-mobile-web-app-title" content="Finanças">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" href="icons/icon-192.png">
+<link rel="icon" type="image/svg+xml" href="icons/logo.svg">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <script src="config.js"></script>
 <title>Minhas Finanças</title>
@@ -56,7 +57,9 @@
   tr.editing td { background: color-mix(in srgb, var(--blue) 12%, transparent); }
   .card.editing { border-color: var(--blue); box-shadow: 0 0 0 1px var(--blue); }
   input, select { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 7px 10px; width: 100%; }
-  form.tx { display: grid; grid-template-columns: 120px 1fr 1fr 130px 140px auto; gap: 8px; align-items: end; }
+  form.tx { display: grid; grid-template-columns: 120px 1fr 1fr 130px 140px auto auto; gap: 8px; align-items: end; }
+  .check-row.paid-check { margin: 0; min-height: 36px; color: var(--text); font-size: 14px; white-space: nowrap; }
+  .paid-check input { width: 18px; height: 18px; }
   @media (max-width: 800px) { form.tx { grid-template-columns: 1fr 1fr; } }
   label.f { display: grid; gap: 4px; font-size: 12px; color: var(--muted); }
   .seg { display: flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
@@ -70,6 +73,13 @@
   th { color: var(--muted); font-weight: 500; font-size: 12px; }
   td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .by { color: var(--muted); font-weight: 400; font-size: 12px; margin-left: 6px; }
+  .stat .sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .stat .sub b { font-weight: 600; }
+  .check-row { display: flex; gap: 6px; align-items: center; margin-top: 8px; width: auto; }
+  .paid-pill { font-size: 12px; padding: 3px 10px; border-radius: 999px; white-space: nowrap; font-weight: 600; background: transparent; }
+  .paid-pill.paid { color: var(--green); border-color: var(--green); background: var(--green-bg); }
+  .paid-pill.pend { color: var(--amber); border-color: var(--amber); }
+  .paid-pill.late { color: var(--red); border-color: var(--red); background: var(--red-bg); }
   .tbl-wrap { overflow-x: auto; }
   select.cat-sel { width: auto; max-width: 170px; padding: 3px 6px; background: transparent; border-color: transparent; cursor: pointer; }
   select.cat-sel:hover, select.cat-sel:focus { border-color: var(--border); background: var(--bg); }
@@ -94,6 +104,8 @@
   .muted { color: var(--muted); font-size: 12px; }
   .fab { display: none; }
   .brand { display: flex; align-items: center; gap: 10px; }
+  .brand h1 { display: flex; align-items: center; gap: 8px; }
+  .brand-logo { width: 28px; height: 28px; flex: none; }
   .status-chip { font-size: 12px; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--amber); color: var(--amber); white-space: nowrap; }
   .status-chip.busy { border-color: var(--border); color: var(--blue); }
   .avatar { width: 36px; height: 36px; min-height: 0 !important; border-radius: 50%; padding: 0; font-weight: 700; background: #2563eb; color: #fff; border: none; flex: none; }
@@ -167,11 +179,13 @@
     label.f { font-size: 13px; }
     label.f input, label.f select { font-size: 16px; }
     form.tx { grid-template-columns: 1fr 1fr; gap: 10px; }
-    form.tx > :nth-child(1), form.tx > :nth-child(2), form.tx > :nth-child(5), form.tx > :nth-child(6) { grid-column: 1 / -1; }
-    form.tx > :nth-child(6) button { flex: 1; min-height: 48px; }
+    form.tx > :nth-child(1), form.tx > :nth-child(2), form.tx > :nth-child(5), form.tx > :nth-child(6), form.tx > :nth-child(7) { grid-column: 1 / -1; }
+    form.tx > :nth-child(7) button { flex: 1; min-height: 48px; }
+    .paid-check { font-size: 16px; }
+    .paid-check input { min-height: 0; width: 22px !important; height: 22px; }
     .seg button { min-height: 42px; }
-    #recurRow { font-size: 14px; flex-wrap: wrap; }
-    #recurRow input[type=checkbox] { min-height: 0; width: 20px !important; height: 20px; }
+    .check-row { font-size: 14px; flex-wrap: wrap; }
+    .check-row input[type=checkbox] { min-height: 0; width: 20px !important; height: 20px; }
     #recurRow input[type=number] { min-height: 36px; }
 
     .bar-row { grid-template-columns: 92px 1fr; row-gap: 2px; }
@@ -180,23 +194,27 @@
     .card h2#budgetsTitle { flex-wrap: wrap; gap: 8px; }
 
     .toolbar input { flex-basis: 100%; }
-    .toolbar select { min-width: 0; }
+    .toolbar select { min-width: 0; flex: 1 1 calc(50% - 4px); }
 
     /* tabela vira lista de cartões */
     table, tbody { display: block; }
     thead { display: none; }
-    #txBody tr { display: grid; grid-template-columns: auto 1fr auto; grid-template-areas: "desc desc val" "date cat act"; align-items: center; gap: 2px 8px; padding: 10px 2px; border-bottom: 1px solid var(--border); }
+    #txBody tr { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; grid-template-areas: "desc desc desc val" "date cat paid act"; align-items: center; gap: 2px 8px; padding: 10px 2px; border-bottom: 1px solid var(--border); }
+    #txBody td.c-paid { grid-area: paid; justify-self: end; }
+    .paid-pill { min-height: 32px !important; font-size: 12px !important; padding: 2px 10px; }
     #txBody td { border: none; padding: 0; }
     #txBody td.c-desc { grid-area: desc; font-weight: 600; overflow-wrap: anywhere; }
     #txBody td.num { grid-area: val; font-weight: 600; }
     #txBody td.c-date { grid-area: date; color: var(--muted); font-size: 13px; }
-    #txBody td.c-cat { grid-area: cat; min-width: 0; white-space: nowrap; }
+    #txBody td.c-cat { grid-area: cat; min-width: 0; white-space: nowrap; display: flex; align-items: center; }
+    #txBody td.c-cat .dot { flex: none; }
     #txBody td.c-act { grid-area: act; justify-self: end; }
     #txBody td.empty { grid-column: 1 / -1; }
     tr.editing { background: color-mix(in srgb, var(--blue) 12%, transparent); border-radius: 8px; }
     tr.editing td { background: none; }
-    select.cat-sel { min-height: 32px; font-size: 14px; max-width: 150px; padding: 2px 4px; border-color: var(--border); }
-    button.icon { min-height: 40px; min-width: 40px; font-size: 18px; }
+    select.cat-sel { min-height: 32px; font-size: 14px; width: 100%; max-width: 100%; min-width: 0; padding: 2px 4px; border-color: var(--border); }
+    button.icon { min-height: 40px; min-width: 34px; padding: 4px 6px; font-size: 18px; }
+    #txBody tr { column-gap: 6px; }
 
     .actions button { flex: 1 1 100%; }
     .cat-item input[type=number] { width: 90px; }
@@ -218,7 +236,7 @@
 
 <div id="authScreen" class="screen" hidden>
   <div class="card auth-card">
-    <img class="auth-logo" src="icons/icon-192.png" alt="">
+    <img class="auth-logo" src="icons/logo.svg" alt="">
     <h1>Minhas Finanças</h1>
     <p class="muted">Entre para ver e lançar suas finanças.</p>
     <div class="auth-msg info" id="authSetup" hidden>
@@ -248,7 +266,7 @@
 
 <div id="lockScreen" class="screen" hidden>
   <div class="card auth-card">
-    <img class="auth-logo" src="icons/icon-192.png" alt="">
+    <img class="auth-logo" src="icons/logo.svg" alt="">
     <h1>Minhas Finanças</h1>
     <p class="muted" id="lockWho"></p>
     <button class="primary" id="unlockBtn">🔓 Desbloquear com digital</button>
@@ -260,7 +278,7 @@
 <div id="appRoot" hidden>
 <header>
   <div class="brand">
-    <h1>💰 Minhas Finanças</h1>
+    <h1><img class="brand-logo" src="icons/logo.svg" alt="">Minhas Finanças</h1>
     <span class="status-chip" id="statusChip" hidden></span>
     <button class="avatar" id="userBtn" title="Minha conta"></button>
   </div>
@@ -279,7 +297,7 @@
 <main>
   <section class="cards">
     <div class="card stat"><div class="label">Receitas do mês</div><div class="value pos" id="sumIn">R$ 0,00</div></div>
-    <div class="card stat"><div class="label">Despesas do mês</div><div class="value neg" id="sumOut">R$ 0,00</div></div>
+    <div class="card stat"><div class="label">Despesas do mês</div><div class="value neg" id="sumOut">R$ 0,00</div><div class="sub" id="sumOutSub"></div></div>
     <div class="card stat"><div class="label">Saldo do mês</div><div class="value" id="sumBal">R$ 0,00</div></div>
     <div class="card stat"><div class="label">Saldo acumulado</div><div class="value" id="sumTotal">R$ 0,00</div></div>
   </section>
@@ -311,12 +329,15 @@
       <label class="f">Categoria <select id="fCat"></select></label>
       <label class="f">Valor (R$) <input id="fVal" required inputmode="decimal" placeholder="0,00"></label>
       <label class="f">Data <input id="fDate" type="date" required></label>
+      <label class="f" id="paidRow">Situação
+        <span class="check-row paid-check"><input type="checkbox" id="fPaid"> Já está paga</span>
+      </label>
       <div style="display:flex;gap:6px">
         <button class="primary" type="submit" id="submitBtn">Adicionar</button>
         <button type="button" id="cancelEdit" hidden>Cancelar</button>
       </div>
     </form>
-    <label class="muted" id="recurRow" style="display:flex;gap:6px;align-items:center;margin-top:8px;width:auto">
+    <label class="muted check-row" id="recurRow">
       <input type="checkbox" id="fRecur" style="width:auto"> Repetir nos próximos
       <input type="number" id="fRecurN" min="1" max="60" value="11" style="width:70px"> meses
     </label>
@@ -344,9 +365,10 @@
       <input id="search" placeholder="Buscar descrição...">
       <select id="filterCat"><option value="">Todas as categorias</option></select>
       <select id="filterType"><option value="">Receitas e despesas</option><option value="receita">Só receitas</option><option value="despesa">Só despesas</option></select>
+      <select id="filterPaid"><option value="">Pagas e a pagar</option><option value="pend">Só a pagar</option><option value="paid">Só pagas</option></select>
     </div>
     <div class="tbl-wrap"><table>
-      <thead><tr><th>Data</th><th>Descrição</th><th>Categoria</th><th style="text-align:right">Valor</th><th></th></tr></thead>
+      <thead><tr><th>Data</th><th>Descrição</th><th>Categoria</th><th style="text-align:right">Valor</th><th>Situação</th><th></th></tr></thead>
       <tbody id="txBody"></tbody>
     </table></div>
   </section>
@@ -766,7 +788,10 @@ const ledgerRef = (id = areas[area].id) => F.doc(db, 'ledgers', id);
 const monthRef = (date, id = areas[area].id) => F.doc(db, 'ledgers', id, 'months', date.slice(0, 7));
 const newId = () => F.doc(F.collection(db, 'ids')).id;
 const txData = t => ({ type: t.type, desc: t.desc, category: t.category, amount: t.amount, date: t.date,
-  by: t.by || me.uid, at: t.at || Date.now() });
+  by: t.by || me.uid, at: t.at || Date.now(), ...(t.type === 'despesa' ? { paid: isPaid(t) } : {}) });
+function setPaid(t, paid) {
+  F.updateDoc(monthRef(t.date), { [`txs.${t.id}.paid`]: paid }).catch(fail);
+}
 function fail(e) {
   console.error(e);
   alert('Não foi possível salvar: ' + (e.code === 'permission-denied' ? 'sem permissão para esta área.' : (e.code || e.message)));
@@ -802,6 +827,10 @@ function saveCategories(cats) {
 }
 
 // ===== Tela principal =====
+// situação de pagamento: só despesas. Lançamentos antigos (sem a informação)
+// contam como pagos se a data já passou e como a pagar se for futura.
+const todayStr = () => new Date().toLocaleDateString('sv-SE');
+const isPaid = t => t.type !== 'despesa' || (t.paid ?? t.date <= todayStr());
 const catColor = name => COLORS[state.categories.findIndex(c => c.name === name) % COLORS.length] || '#888';
 function monthTx(key) { return state.transactions.filter(t => t.date.startsWith(key)); }
 function totals(list) {
@@ -848,6 +877,12 @@ function render() {
   const t = totals(list);
   $('sumIn').textContent = brl(t.i);
   $('sumOut').textContent = brl(t.o);
+  const outs = list.filter(x => x.type === 'despesa'), today = todayStr();
+  const toPay = outs.filter(x => !isPaid(x)), late = toPay.filter(x => x.date < today);
+  const sumOf = arr => arr.reduce((s, x) => s + x.amount, 0);
+  $('sumOutSub').innerHTML = !outs.length ? '' :
+    `${brl(t.o - sumOf(toPay))} pagas · <b style="color:var(--amber)">${brl(sumOf(toPay))} a pagar</b>` +
+    (late.length ? ` · <b style="color:var(--red)">${late.length} atrasada${late.length > 1 ? 's' : ''}</b>` : '');
   $('sumBal').textContent = brl(t.b); $('sumBal').className = 'value ' + (t.b >= 0 ? 'pos' : 'neg');
   const acc = totals(state.transactions.filter(x => x.date.slice(0, 7) <= key)).b;
   $('sumTotal').textContent = brl(acc); $('sumTotal').className = 'value ' + (acc >= 0 ? 'pos' : 'neg');
@@ -898,24 +933,38 @@ function render() {
   // tabela
   const famInfo = area === 'family' ? (areas.family?.doc?.memberInfo || {}) : null;
   const byName = uid => famInfo && famInfo[uid] ? ` <span class="by">· ${esc(String(famInfo[uid].name || '').split(' ')[0])}</span>` : '';
-  const q = $('search').value.toLowerCase(), fc = $('filterCat').value, ft = $('filterType').value;
-  const rows = list.filter(x => (!q || x.desc.toLowerCase().includes(q)) && (!fc || x.category === fc) && (!ft || x.type === ft))
+  const q = $('search').value.toLowerCase(), fc = $('filterCat').value, ft = $('filterType').value, fp = $('filterPaid').value;
+  const rows = list.filter(x => (!q || x.desc.toLowerCase().includes(q)) && (!fc || x.category === fc) && (!ft || x.type === ft)
+      && (!fp || (x.type === 'despesa' && (fp === 'paid') === isPaid(x))))
     .sort((a, b) => b.date.localeCompare(a.date) || (b.at || 0) - (a.at || 0));
+  const pill = x => {
+    if (x.type !== 'despesa') return '';
+    const [cls, label, tip] = isPaid(x) ? ['paid', '✓ Paga', 'Marcar como a pagar']
+      : x.date < today ? ['late', '⚠ Atrasada', 'Marcar como paga'] : ['pend', 'A pagar', 'Marcar como paga'];
+    return `<button class="paid-pill ${cls}" data-paid="${x.id}" title="${tip}">${label}</button>`;
+  };
   $('txBody').innerHTML = rows.length ? rows.map(x => `<tr${x.id === editingId ? ' class="editing"' : ''}>
-    <td class="c-date">${x.date.split('-').reverse().join('/')}</td>
+    <td class="c-date">${x.date.slice(8, 10)}/${x.date.slice(5, 7)}</td>
     <td class="c-desc">${esc(x.desc)}${byName(x.by)}</td>
     <td class="c-cat"><span class="dot" style="background:${catColor(x.category)}"></span><select class="cat-sel" data-id="${x.id}" title="Alterar categoria">${catOptions(x.type, x.category)}</select></td>
     <td class="num ${x.type === 'receita' ? 'pos' : 'neg'}">${x.type === 'receita' ? '+' : '−'} ${brl(x.amount)}</td>
+    <td class="c-paid">${pill(x)}</td>
     <td class="c-act" style="white-space:nowrap"><button class="icon edit" data-edit="${x.id}" title="Editar">✎</button><button class="icon" data-del="${x.id}" title="Excluir">✕</button></td></tr>`).join('')
-    : `<tr><td colspan="5" class="empty">${areas[area]?.loaded === false ? 'Carregando…' : 'Nenhuma transação.'}</td></tr>`;
+    : `<tr><td colspan="6" class="empty">${areas[area]?.loaded === false ? 'Carregando…' : 'Nenhuma transação.'}</td></tr>`;
 }
 
 // ===== Formulário =====
 function setType(t) {
   txType = t;
   document.querySelectorAll('#typeSeg button').forEach(x => x.classList.toggle('on', x.dataset.t === t));
+  $('paidRow').hidden = t !== 'despesa';
   fillCatSelects();
 }
+// "Já está paga": acompanha a data (hoje/passado = paga, futuro = a pagar) até a pessoa mexer na caixa
+let paidTouched = false;
+const syncPaidBox = () => { if (!paidTouched) $('fPaid').checked = !!$('fDate').value && $('fDate').value <= todayStr(); };
+$('fDate').addEventListener('input', syncPaidBox);
+$('fPaid').addEventListener('change', () => { paidTouched = true; });
 $('typeSeg').addEventListener('click', e => {
   const b = e.target.closest('button'); if (b) setType(b.dataset.t);
 });
@@ -928,6 +977,7 @@ function startEdit(t) {
   $('fCat').value = t.category;
   $('fVal').value = t.amount.toFixed(2).replace('.', ',');
   $('fDate').value = t.date;
+  $('fPaid').checked = isPaid(t); paidTouched = true;
   $('formTitle').textContent = 'Editar transação';
   $('submitBtn').textContent = 'Salvar';
   $('cancelEdit').hidden = false;
@@ -940,6 +990,7 @@ function startEdit(t) {
 function endEdit(silent) {
   editingId = null;
   $('fDesc').value = ''; $('fVal').value = '';
+  paidTouched = false; syncPaidBox();
   $('formTitle').textContent = 'Nova transação';
   $('submitBtn').textContent = 'Adicionar';
   $('cancelEdit').hidden = true;
@@ -992,7 +1043,9 @@ $('txForm').addEventListener('submit', e => {
   const amount = parseVal($('fVal').value);
   if (!(amount > 0)) { alert('Informe um valor válido.'); return; }
   const base = { type: txType, desc: $('fDesc').value.trim(), category: $('fCat').value, amount };
+  const paidBox = $('fPaid').checked;
   if (editingId != null) {
+    base.paid = paidBox;
     const old = state.transactions.find(x => x.id === editingId);
     if (old) updateTx(old, { ...old, ...base, date: $('fDate').value, at: Date.now() });
     endEdit();
@@ -1004,14 +1057,19 @@ $('txForm').addEventListener('submit', e => {
   for (let k = 0; k <= n; k++) {
     const last = new Date(y, m - 1 + k + 1, 0).getDate();
     const dt = new Date(y, m - 1 + k, Math.min(d, last));
-    list.push({ ...base, date: ym(dt) + '-' + String(dt.getDate()).padStart(2, '0'), at: Date.now() + k });
+    const date = ym(dt) + '-' + String(dt.getDate()).padStart(2, '0');
+    // repetições em meses futuros entram como "a pagar"
+    list.push({ ...base, date, paid: paidBox && (k === 0 || date <= todayStr()), at: Date.now() + k });
   }
   addTxs(list);
   $('fDesc').value = ''; $('fVal').value = ''; $('fRecur').checked = false;
+  paidTouched = false; syncPaidBox();
   $('fDesc').focus();
 });
 
 $('txBody').addEventListener('click', e => {
+  const paidId = e.target.closest('[data-paid]')?.dataset.paid;
+  if (paidId) { const t = state.transactions.find(x => x.id === paidId); if (t) setPaid(t, !isPaid(t)); return; }
   const editId = e.target.dataset.edit;
   if (editId) { const t = state.transactions.find(x => x.id === editId); if (t) startEdit(t); return; }
   const id = e.target.dataset.del; if (!id) return;
@@ -1024,7 +1082,7 @@ $('txBody').addEventListener('click', e => {
 $('prev').onclick = () => { cur.setMonth(cur.getMonth() - 1); render(); };
 $('next').onclick = () => { cur.setMonth(cur.getMonth() + 1); render(); };
 $('today').onclick = () => { cur = new Date(); cur.setDate(1); render(); };
-['search', 'filterCat', 'filterType'].forEach(id => $(id).addEventListener('input', render));
+['search', 'filterCat', 'filterType', 'filterPaid'].forEach(id => $(id).addEventListener('input', render));
 
 // ===== Categorias =====
 // edita uma cópia; salva ao fechar. Lançamentos de categorias renomeadas/removidas são movidos na hora.
@@ -1484,10 +1542,11 @@ const areaSlug = () => area === 'family' ? 'familia' : 'pessoal';
 $('exportJson').onclick = () => download(`financas-${areaSlug()}-${new Date().toISOString().slice(0, 10)}.json`,
   JSON.stringify({ area, categories: state.categories, transactions: state.transactions }, null, 2), 'application/json');
 $('exportCsv').onclick = () => {
-  const lines = ['Data;Tipo;Descrição;Categoria;Valor'];
+  const lines = ['Data;Tipo;Descrição;Categoria;Valor;Situação'];
   [...state.transactions].sort((a, b) => a.date.localeCompare(b.date)).forEach(t =>
     lines.push([t.date.split('-').reverse().join('/'), t.type, '"' + t.desc.replace(/"/g, '""') + '"', t.category,
-      (t.type === 'despesa' ? -t.amount : t.amount).toFixed(2).replace('.', ',')].join(';')));
+      (t.type === 'despesa' ? -t.amount : t.amount).toFixed(2).replace('.', ','),
+      t.type === 'despesa' ? (isPaid(t) ? 'Paga' : 'A pagar') : ''].join(';')));
   download(`financas-${areaSlug()}.csv`, '﻿' + lines.join('\r\n'), 'text/csv');
 };
 $('importJson').onclick = () => $('fileIn').click();
@@ -1592,6 +1651,7 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 
 // ===== Início =====
 $('fDate').value = new Date().toLocaleDateString('sv-SE');
+syncPaidBox();
 fillCatSelects();
 render();
 boot();

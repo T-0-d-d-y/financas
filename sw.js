@@ -3,10 +3,10 @@
 //  descreva as mudanças. É isso que faz os aparelhos mostrarem
 //  o aviso "Nova versão disponível".
 // ============================================================
-const VERSION = '1.0.2';
+const VERSION = '1.1.1';
 const CHANGES = [
-  'No computador, o app não pergunta mais sobre a digital (a opção continua em "Minha conta")',
-  'Aviso claro quando o app é aberto como arquivo do computador em vez do endereço publicado',
+  'Novo logo do app',
+  'Despesas pagas e a pagar: marque com um toque, veja o total a pagar e as atrasadas',
 ];
 
 // Service worker: guarda uma cópia desta versão do app no aparelho.
@@ -14,7 +14,7 @@ const CHANGES = [
 // nova só entra em uso quando o usuário toca em "Atualizar".
 const CACHE = 'financas-' + VERSION;
 const SHELL = ['./', 'index.html', 'config.js', 'manifest.webmanifest',
-  'icons/icon-192.png', 'icons/icon-512.png', 'icons/maskable-512.png', 'icons/apple-touch-icon.png'];
+  'icons/logo.svg', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/maskable-512.png', 'icons/apple-touch-icon.png'];
 
 // bibliotecas do Firebase (mesma versão usada no index.html)
 const SDK = 'https://www.gstatic.com/firebasejs/10.14.1/';
