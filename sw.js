@@ -3,14 +3,10 @@
 //  descreva as mudanças. É isso que faz os aparelhos mostrarem
 //  o aviso "Nova versão disponível".
 // ============================================================
-const VERSION = '1.0.0';
+const VERSION = '1.0.2';
 const CHANGES = [
-  'Primeira versão publicada',
-  'Login com Google ou e-mail e senha',
-  'Área Pessoal e área Família, com código de convite',
-  'Entrada na família só com aprovação de um administrador',
-  'Desbloqueio do app com digital ou rosto',
-  'App instalável no celular, funciona sem internet',
+  'No computador, o app não pergunta mais sobre a digital (a opção continua em "Minha conta")',
+  'Aviso claro quando o app é aberto como arquivo do computador em vez do endereço publicado',
 ];
 
 // Service worker: guarda uma cópia desta versão do app no aparelho.

@@ -502,6 +502,13 @@ function show(which) {
 // ===== Inicialização e login =====
 async function boot() {
   if (!CFG) { show('auth'); $('authSetup').hidden = false; $('authForms').hidden = true; return; }
+  // aberto como arquivo do computador: o login do Firebase só funciona pelo endereço publicado (https)
+  if (location.protocol === 'file:') {
+    show('auth'); $('authForms').hidden = true; $('authSetup').hidden = false;
+    $('authSetup').innerHTML = 'Este é o arquivo do app salvo no computador, e por aqui o login não funciona.<br><br>' +
+      'Abra pelo endereço publicado no GitHub Pages, por exemplo <b>https://SEU-USUARIO.github.io/financas/</b>.';
+    return;
+  }
   try {
     const [appM, authM, fsM] = await Promise.all(
       ['firebase-app.js', 'firebase-auth.js', 'firebase-firestore.js'].map(f => import(SDK + f)));
@@ -531,7 +538,8 @@ const AUTH_ERRORS = {
   'auth/network-request-failed': 'Sem conexão com a internet.',
   'auth/popup-blocked': 'O navegador bloqueou a janela do Google. Permita pop-ups ou entre com e-mail.',
   'auth/unauthorized-domain': 'Este endereço não está autorizado no Firebase (veja o LEIA-ME, passo "Domínios autorizados").',
-  'auth/operation-not-allowed': 'Este tipo de login não está ativado no Firebase (veja o LEIA-ME).',
+  'auth/operation-not-supported-in-this-environment': 'Login indisponível aqui. Abra o app pelo endereço https publicado.',
+  'auth/operation-not-allowed':'Este tipo de login não está ativado no Firebase (veja o LEIA-ME).',
 };
 function authMessage(text, info) {
   const m = $('authMsg');
@@ -1358,9 +1366,15 @@ document.addEventListener('visibilitychange', () => {
   else if (!locked && hiddenAt && Date.now() - hiddenAt >= (lockCfg().after ?? 60) * 1000) lockNow();
 });
 
-// pergunta uma vez, depois do primeiro login neste aparelho
+// celular ou tablet (iPad se identifica como Mac, mas tem tela de toque)
+const isMobileDevice = navigator.userAgentData?.mobile
+  || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)
+  || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+// pergunta uma vez, depois do primeiro login, só em celular/tablet
+// (no computador a opção continua disponível em "Minha conta")
 function offerBio() {
-  if (!bioAvailable || lockOn() || lockCfg().declined) return;
+  if (!isMobileDevice || !bioAvailable || lockOn() || lockCfg().declined) return;
   setTimeout(() => { if (me && !locked && !document.querySelector('dialog[open]')) { $('bioDlgMsg').hidden = true; $('bioDlg').showModal(); } }, 1200);
 }
 $('bioLater').onclick = () => { setLockCfg({ declined: true }); $('bioDlg').close(); };
