@@ -73,9 +73,29 @@
   th { color: var(--muted); font-weight: 500; font-size: 12px; }
   td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .by { color: var(--muted); font-weight: 400; font-size: 12px; margin-left: 6px; }
+  .head-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .inv-sum { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
+  .inv-sum > div { background: var(--bg); border-radius: 10px; padding: 10px 12px; }
+  .inv-sum .label { font-size: 12px; color: var(--muted); }
+  .inv-sum .v { font-size: 18px; font-weight: 700; margin-top: 2px; font-variant-numeric: tabular-nums; }
+  .inv-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid var(--border); cursor: pointer; }
+  .inv-item .who { flex: 1; min-width: 0; }
+  .inv-item .who b { display: block; overflow-wrap: anywhere; }
+  .inv-item .vals { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .inv-item .vals b { display: block; }
+  .inv-form { display: grid; gap: 10px; }
+  dialog { overflow-y: auto; }
+  .moves { display: grid; gap: 10px; border-top: 1px solid var(--border); padding-top: 4px; }
+  .moves h3 { margin: 8px 0 0; }
+  .mv-row { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-top: 1px solid var(--border); font-size: 14px; }
+  .mv-row .what { flex: 1; min-width: 0; }
+  .mv-row .amt { font-variant-numeric: tabular-nums; white-space: nowrap; font-weight: 600; }
+  .inv-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .stat .sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
   .stat .sub b { font-weight: 600; }
   .check-row { display: flex; gap: 6px; align-items: center; margin-top: 8px; width: auto; }
+  .check-row > span { flex: 1 1 0; min-width: 0; }
+  .check-row > input[type=checkbox] { flex: none; }
   .paid-pill { font-size: 12px; padding: 3px 10px; border-radius: 999px; white-space: nowrap; font-weight: 600; background: transparent; }
   .paid-pill.paid { color: var(--green); border-color: var(--green); background: var(--green-bg); }
   .paid-pill.pend { color: var(--amber); border-color: var(--amber); }
@@ -217,6 +237,13 @@
     #txBody tr { column-gap: 6px; }
 
     .actions button { flex: 1 1 100%; }
+    #patCard { grid-column: 1 / -1; }
+    .inv-sum { grid-template-columns: 1fr 1fr; }
+    .inv-sum > div:last-child { grid-column: 1 / -1; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+    .inv-sum .v { font-size: 16px; }
+    .inv-item .vals { font-size: 14px; }
+    .inv-pair { grid-template-columns: 1fr; }
+    #invTypes .bar-row { grid-template-columns: 1fr; }
     .cat-item input[type=number] { width: 90px; }
     dialog { padding: 14px; max-height: 90vh; }
     .code { font-size: 19px; }
@@ -300,6 +327,7 @@
     <div class="card stat"><div class="label">Despesas do mês</div><div class="value neg" id="sumOut">R$ 0,00</div><div class="sub" id="sumOutSub"></div></div>
     <div class="card stat"><div class="label">Saldo do mês</div><div class="value" id="sumBal">R$ 0,00</div></div>
     <div class="card stat"><div class="label">Saldo acumulado</div><div class="value" id="sumTotal">R$ 0,00</div></div>
+    <div class="card stat" id="patCard"><div class="label">Patrimônio total</div><div class="value" id="sumPat">R$ 0,00</div><div class="sub" id="sumPatSub"></div></div>
   </section>
 
   <section class="card req-card" id="reqCard" hidden>
@@ -360,6 +388,14 @@
   </section>
 
   <section class="card">
+    <h2 class="head-row"><span>Investimentos<span class="area-tag" id="invArea"></span></span>
+      <button class="primary" id="invAdd">+ Adicionar</button></h2>
+    <div class="inv-sum" id="invSum"></div>
+    <div id="invTypes"></div>
+    <div id="invList"></div>
+  </section>
+
+  <section class="card">
     <h2>Transações do mês</h2>
     <div class="toolbar">
       <input id="search" placeholder="Buscar descrição...">
@@ -412,6 +448,41 @@
     <button class="primary" id="updateNow">Atualizar agora</button>
   </div>
 </div>
+
+<dialog id="invDlg">
+  <h2 id="invDlgTitle">Novo investimento</h2>
+  <form id="invForm" class="inv-form">
+    <label class="f">Nome <input id="iName" required placeholder="Ex.: CDB Banco Inter"></label>
+    <label class="f">Tipo <select id="iType"></select></label>
+    <label class="f">Instituição <input id="iInst" placeholder="Ex.: Nubank, XP, Caixa"></label>
+    <div class="inv-pair">
+      <label class="f">Valor aplicado (R$) <input id="iApplied" required inputmode="decimal" placeholder="0,00"></label>
+      <label class="f">Valor atual (R$) <input id="iCurrent" inputmode="decimal" placeholder="igual ao aplicado"></label>
+    </div>
+    <p class="muted" style="margin:0">Valor aplicado: quanto você colocou. Valor atual: quanto vale hoje, com rendimentos. Atualize sempre que olhar o extrato.</p>
+    <div class="moves" id="invMoves" hidden>
+      <h3>Aportes e resgates</h3>
+      <div class="seg plain" id="mvKind">
+        <button type="button" data-k="aporte" class="on">+ Aporte</button>
+        <button type="button" data-k="resgate">− Resgate</button>
+      </div>
+      <div class="inv-pair">
+        <label class="f">Valor (R$) <input id="mvVal" inputmode="decimal" placeholder="0,00"></label>
+        <label class="f">Data <input id="mvDate" type="date"></label>
+      </div>
+      <label class="check-row"><input type="checkbox" id="mvLaunch" checked> <span id="mvLaunchLbl"></span></label>
+      <button type="button" class="primary" id="mvSave">Registrar aporte</button>
+      <div class="auth-msg" id="mvMsg" hidden></div>
+      <div id="mvList"></div>
+    </div>
+    <div class="auth-msg" id="invMsg" hidden></div>
+    <div class="dlg-foot">
+      <button type="button" class="danger" id="invDel" style="margin-right:auto" hidden>Excluir</button>
+      <button type="button" id="invCancel">Cancelar</button>
+      <button class="primary" type="submit">Salvar</button>
+    </div>
+  </form>
+</dialog>
 
 <dialog id="catDlg">
   <h2>Categorias e limites mensais</h2>
@@ -509,7 +580,13 @@ let famView = 'members';
 const areas = { personal: null, family: null };
 let area = lsGet(AREA_KEY) === 'family' ? 'family' : 'personal';
 // visão da área aberta, usada por toda a tela
-let state = { categories: DEFAULT_CATS, transactions: [] };
+let state = { categories: DEFAULT_CATS, transactions: [], investments: [] };
+// investimentos ficam num documento especial dentro de "months" da área
+// (mesma permissão dos lançamentos: só membros leem e gravam)
+const INV_DOC = '_investimentos';
+const INV_TYPES = ['Poupança', 'CDB / LCI / LCA', 'Tesouro Direto', 'Ações', 'Fundos imobiliários', 'Fundos de investimento', 'Previdência', 'Criptomoedas', 'Outros'];
+// cores próprias, sem vermelho/verde (que no app significam perda/ganho)
+const INV_COLORS = ['#0891b2', '#2563eb', '#7c3aed', '#d97706', '#0d9488', '#4f46e5', '#db2777', '#ca8a04', '#64748b'];
 let txType = 'despesa';
 let editingId = null;
 let cur = new Date(); cur.setDate(1);
@@ -701,7 +778,8 @@ function watchArea(key, id, attempt = 0) {
     refresh();
   }, onErr));
   a.unsubs.push(F.onSnapshot(F.collection(db, 'ledgers', id, 'months'), { includeMetadataChanges: true }, s => {
-    a.months = new Map(s.docs.map(d => [d.id, d.data().txs || {}]));
+    a.months = new Map(s.docs.filter(d => d.id !== INV_DOC).map(d => [d.id, d.data().txs || {}]));
+    a.investments = s.docs.find(d => d.id === INV_DOC)?.data().items || {};
     a.pending = s.metadata.hasPendingWrites;
     a.loaded = true;
     refresh();
@@ -736,12 +814,16 @@ function refresh() {
   const txs = [];
   if (a) for (const monthTxs of a.months.values())
     for (const [id, t] of Object.entries(monthTxs)) txs.push({ ...t, id });
-  state = { categories: a?.doc?.categories || DEFAULT_CATS, transactions: txs };
+  state = { categories: a?.doc?.categories || DEFAULT_CATS, transactions: txs,
+    investments: Object.entries(a?.investments || {}).map(([id, v]) => ({ ...v, id })) };
   if (editingId != null && !txs.some(t => t.id === editingId)) endEdit(true);
   fillCatSelects();
   render();
   renderHeader();
   if ($('famDlg').open) renderFam();
+  if ($('invDlg').open && invEditing) {
+    if (invById(invEditing)) renderMoves(); else $('invDlg').close(); // excluído em outro aparelho
+  }
 }
 
 const myName = () => me?.displayName || (me?.email || '').split('@')[0] || 'Eu';
@@ -886,6 +968,10 @@ function render() {
   $('sumBal').textContent = brl(t.b); $('sumBal').className = 'value ' + (t.b >= 0 ? 'pos' : 'neg');
   const acc = totals(state.transactions.filter(x => x.date.slice(0, 7) <= key)).b;
   $('sumTotal').textContent = brl(acc); $('sumTotal').className = 'value ' + (acc >= 0 ? 'pos' : 'neg');
+  // patrimônio = saldo acumulado dos lançamentos + valor atual dos investimentos
+  const invTotal = state.investments.reduce((s, x) => s + (x.current || 0), 0), pat = acc + invTotal;
+  $('sumPat').textContent = brl(pat); $('sumPat').className = 'value ' + (pat >= 0 ? 'pos' : 'neg');
+  $('sumPatSub').textContent = `${brl(acc)} em saldo · ${brl(invTotal)} investidos`;
 
   // gastos por categoria
   const byCat = {};
@@ -919,6 +1005,7 @@ function render() {
   const fmtBal = v => bw < 80
     ? (v < 0 ? '−' : '') + Math.abs(v).toLocaleString('pt-BR', { notation: 'compact', maximumFractionDigits: 1 })
     : brl(v).replace(/,\d\d$/, '');
+  renderInvestments();
   $('history').innerHTML = `<svg viewBox="0 0 ${W} ${H + 40}" style="width:100%;height:auto;display:block">
     ${hs.map((h, k) => {
       const x = k * bw + bw / 2, hi = h.i / hmax * H, ho = h.o / hmax * H;
@@ -952,6 +1039,181 @@ function render() {
     <td class="c-act" style="white-space:nowrap"><button class="icon edit" data-edit="${x.id}" title="Editar">✎</button><button class="icon" data-del="${x.id}" title="Excluir">✕</button></td></tr>`).join('')
     : `<tr><td colspan="6" class="empty">${areas[area]?.loaded === false ? 'Carregando…' : 'Nenhuma transação.'}</td></tr>`;
 }
+
+// ===== Investimentos =====
+const pct = v => (v >= 0 ? '+' : '') + v.toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + '%';
+const signedBrl = v => (v >= 0 ? '+' : '−') + brl(Math.abs(v));
+function renderInvestments() {
+  const inv = [...state.investments].sort((a, b) => (b.current || 0) - (a.current || 0));
+  $('invArea').textContent = area === 'family' ? '· ' + (areas.family?.doc?.name || 'Família') : '· Pessoal';
+  if (!inv.length) {
+    $('invSum').innerHTML = ''; $('invTypes').innerHTML = '';
+    $('invList').innerHTML = '<div class="empty">Nenhum investimento cadastrado. Toque em "+ Adicionar" para registrar poupança, CDB, ações e outros.</div>';
+    return;
+  }
+  const applied = inv.reduce((s, x) => s + (x.applied || 0), 0), current = inv.reduce((s, x) => s + (x.current || 0), 0);
+  const gain = current - applied, cls = gain >= 0 ? 'pos' : 'neg';
+  $('invSum').innerHTML = `
+    <div><div class="label">Total aplicado</div><div class="v">${brl(applied)}</div></div>
+    <div><div class="label">Valor atual</div><div class="v">${brl(current)}</div></div>
+    <div><div class="label">Rendimento</div><div class="v ${cls}">${signedBrl(gain)}</div>
+      <div class="label ${cls}">${applied ? pct(gain / applied * 100) : ''}</div></div>`;
+  // distribuição por tipo (pelo valor atual)
+  const byType = {};
+  inv.forEach(x => byType[x.kind] = (byType[x.kind] || 0) + (x.current || 0));
+  const types = Object.entries(byType).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]);
+  const tColor = k => INV_COLORS[INV_TYPES.includes(k) ? INV_TYPES.indexOf(k) : INV_COLORS.length - 1];
+  $('invTypes').innerHTML = types.length > 1 ? types.map(([k, v]) => `
+    <div class="bar-row"><span><span class="dot" style="background:${tColor(k)}"></span>${esc(k)}</span>
+    <div class="bar"><div style="width:${v / types[0][1] * 100}%;background:${tColor(k)}"></div></div>
+    <span class="num" style="text-align:right">${brl(v)} <span class="muted">${Math.round(v / current * 100)}%</span></span></div>`).join('') : '';
+  $('invList').innerHTML = inv.map(x => {
+    const g = (x.current || 0) - (x.applied || 0), c = g >= 0 ? 'pos' : 'neg';
+    const when = x.updated ? ' · atualizado em ' + new Date(x.updated).toLocaleDateString('pt-BR') : '';
+    return `<div class="inv-item" data-inv="${x.id}" title="Editar ou atualizar o valor">
+      <span class="dot" style="background:${tColor(x.kind)}"></span>
+      <div class="who"><b>${esc(x.name)}</b><span class="muted">${esc(x.kind)}${x.inst ? ' · ' + esc(x.inst) : ''}${when}</span></div>
+      <div class="vals"><b>${brl(x.current || 0)}</b><span class="muted ${c}">${signedBrl(g)}${x.applied ? ' (' + pct(g / x.applied * 100) + ')' : ''}</span></div>
+      <button class="icon edit" data-inv="${x.id}" title="Editar" aria-label="Editar">✎</button>
+    </div>`;
+  }).join('');
+}
+
+let invEditing = null;
+$('iType').innerHTML = INV_TYPES.map(t => `<option>${esc(t)}</option>`).join('');
+function openInv(x) {
+  invEditing = x?.id || null;
+  $('invDlgTitle').textContent = x ? 'Editar investimento' : 'Novo investimento';
+  $('iName').value = x?.name || '';
+  $('iType').value = x?.kind || INV_TYPES[1];
+  $('iInst').value = x?.inst || '';
+  $('iApplied').value = x ? (x.applied || 0).toFixed(2).replace('.', ',') : '';
+  $('iCurrent').value = x ? (x.current ?? x.applied ?? 0).toFixed(2).replace('.', ',') : '';
+  $('invDel').hidden = !x;
+  $('invMsg').hidden = true;
+  $('invMoves').hidden = !x; // movimentações só depois que o investimento existe
+  if (x) { $('mvVal').value = ''; $('mvDate').value = todayStr(); $('mvMsg').hidden = true; setMvKind('aporte'); renderMoves(); }
+  $('invDlg').showModal();
+  // ao editar, o mais comum é atualizar o valor atual
+  setTimeout(() => (x ? $('iCurrent') : $('iName')).focus(), 50);
+}
+$('invAdd').onclick = () => openInv(null);
+$('invList').addEventListener('click', e => {
+  const id = e.target.closest('[data-inv]')?.dataset.inv;
+  const x = state.investments.find(i => i.id === id);
+  if (x) openInv(x);
+});
+$('invCancel').onclick = () => $('invDlg').close();
+const invRef = () => F.doc(db, 'ledgers', areas[area].id, 'months', INV_DOC);
+$('invForm').addEventListener('submit', e => {
+  e.preventDefault();
+  if (!areas[area]) return;
+  const applied = parseVal($('iApplied').value);
+  const current = $('iCurrent').value.trim() ? parseVal($('iCurrent').value) : applied;
+  const msg = $('invMsg');
+  if (!(applied >= 0) || !(current >= 0)) { msg.hidden = false; msg.textContent = 'Informe valores válidos, como 1.500,00.'; return; }
+  const old = state.investments.find(i => i.id === invEditing);
+  const item = {
+    name: $('iName').value.trim(), kind: $('iType').value, inst: $('iInst').value.trim(),
+    applied, current, by: old?.by || me.uid,
+    // data de atualização muda só quando o valor atual muda
+    updated: !old || old.current !== current || old.applied !== applied ? Date.now() : (old.updated || Date.now()),
+  };
+  F.setDoc(invRef(), { items: { [invEditing || newId()]: item } }, { merge: true }).catch(fail);
+  $('invDlg').close();
+});
+// --- aportes e resgates ---
+// Cada movimentação guarda quanto mudou no aplicado (dA) e no atual (dC), para poder ser desfeita.
+// Resgate tira do aplicado na proporção resgatada, para o rendimento continuar correto.
+const round2 = v => Math.round(v * 100) / 100;
+const MV_CAT = { aporte: ['Investimentos', 'despesa'], resgate: ['Resgate de investimentos', 'receita'] };
+let mvKind = 'aporte';
+function setMvKind(k) {
+  mvKind = k;
+  document.querySelectorAll('#mvKind button').forEach(b => b.classList.toggle('on', b.dataset.k === k));
+  $('mvSave').textContent = k === 'aporte' ? 'Registrar aporte' : 'Registrar resgate';
+  $('mvLaunchLbl').textContent = k === 'aporte'
+    ? 'Lançar no mês como despesa (categoria "Investimentos")'
+    : 'Lançar no mês como receita (categoria "Resgate de investimentos")';
+}
+$('mvKind').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setMvKind(b.dataset.k); });
+const invById = id => state.investments.find(i => i.id === id);
+
+function renderMoves() {
+  const x = invById(invEditing); if (!x) return;
+  const moves = Object.entries(x.moves || {}).map(([id, m]) => ({ ...m, id }))
+    .sort((a, b) => b.date.localeCompare(a.date) || (b.at || 0) - (a.at || 0));
+  $('mvList').innerHTML = moves.length ? moves.map(m => `<div class="mv-row">
+      <span class="muted">${m.date.slice(8, 10)}/${m.date.slice(5, 7)}/${m.date.slice(2, 4)}</span>
+      <span class="what">${m.kind === 'aporte' ? 'Aporte' : 'Resgate'}${m.txId ? ' <span class="muted">· lançado no mês</span>' : ''}</span>
+      <span class="amt ${m.kind === 'aporte' ? 'pos' : 'neg'}">${m.kind === 'aporte' ? '+' : '−'} ${brl(m.amount)}</span>
+      <button type="button" class="icon" data-undo="${m.id}" title="Desfazer" aria-label="Desfazer">✕</button></div>`).join('')
+    : '<div class="empty">Nenhuma movimentação ainda.</div>';
+}
+
+function ensureCategory(name, type) {
+  if (state.categories.some(c => c.name === name)) return;
+  state.categories = [...state.categories, { name, type, limit: 0 }];
+  saveCategories(state.categories);
+}
+
+$('mvSave').onclick = () => {
+  const x = invById(invEditing); if (!x) return;
+  const v = round2(parseVal($('mvVal').value)), date = $('mvDate').value || todayStr();
+  const msg = $('mvMsg'), ap = x.applied || 0, cur = x.current || 0;
+  msg.hidden = true;
+  if (!(v > 0)) { msg.hidden = false; msg.textContent = 'Informe o valor, como 500,00.'; return; }
+  if (mvKind === 'resgate' && v > cur + 0.005) { msg.hidden = false; msg.textContent = `O resgate não pode passar do valor atual (${brl(cur)}).`; return; }
+  const dC = mvKind === 'aporte' ? v : -v;
+  const dA = mvKind === 'aporte' ? v : (cur > 0 ? -round2(v * ap / cur) : 0);
+  const mid = newId(), move = { kind: mvKind, amount: v, date, dA, dC, by: me.uid, at: Date.now() };
+  const batch = F.writeBatch(db);
+  if ($('mvLaunch').checked) {
+    const [cat, type] = MV_CAT[mvKind];
+    ensureCategory(cat, type);
+    move.txId = newId();
+    batch.set(monthRef(date), { txs: { [move.txId]: txData({
+      type, category: cat, amount: v, date, paid: true,
+      desc: (mvKind === 'aporte' ? 'Aporte: ' : 'Resgate: ') + x.name }) } }, { merge: true });
+  }
+  const newAp = round2(Math.max(0, ap + dA)), newCur = round2(Math.max(0, cur + dC));
+  batch.update(invRef(), {
+    [`items.${x.id}.applied`]: newAp, [`items.${x.id}.current`]: newCur,
+    [`items.${x.id}.updated`]: Date.now(), [`items.${x.id}.moves.${mid}`]: move,
+  });
+  commit(batch);
+  // mostra os novos valores no formulário aberto
+  $('iApplied').value = newAp.toFixed(2).replace('.', ',');
+  $('iCurrent').value = newCur.toFixed(2).replace('.', ',');
+  $('mvVal').value = '';
+};
+$('mvVal').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('mvSave').click(); } });
+
+$('mvList').addEventListener('click', e => {
+  const mid = e.target.closest('[data-undo]')?.dataset.undo; if (!mid) return;
+  const x = invById(invEditing), m = x?.moves?.[mid]; if (!m) return;
+  const what = m.kind === 'aporte' ? 'aporte' : 'resgate';
+  if (!confirm(`Desfazer este ${what} de ${brl(m.amount)}? Os valores do investimento voltam ao que eram${m.txId ? ' e o lançamento no mês é excluído' : ''}.`)) return;
+  const newAp = round2(Math.max(0, (x.applied || 0) - m.dA)), newCur = round2(Math.max(0, (x.current || 0) - m.dC));
+  const batch = F.writeBatch(db);
+  batch.update(invRef(), {
+    [`items.${x.id}.applied`]: newAp, [`items.${x.id}.current`]: newCur,
+    [`items.${x.id}.updated`]: Date.now(), [`items.${x.id}.moves.${mid}`]: F.deleteField(),
+  });
+  // o lançamento pode já ter sido excluído à mão
+  if (m.txId && state.transactions.some(t => t.id === m.txId))
+    batch.update(monthRef(m.date), { [`txs.${m.txId}`]: F.deleteField() });
+  commit(batch);
+  $('iApplied').value = newAp.toFixed(2).replace('.', ',');
+  $('iCurrent').value = newCur.toFixed(2).replace('.', ',');
+});
+
+$('invDel').onclick = () => {
+  const x = state.investments.find(i => i.id === invEditing); if (!x) return;
+  if (!confirm(`Excluir o investimento "${x.name}"?`)) return;
+  F.updateDoc(invRef(), { [`items.${x.id}`]: F.deleteField() }).catch(fail);
+  $('invDlg').close();
+};
 
 // ===== Formulário =====
 function setType(t) {
@@ -1324,6 +1586,7 @@ async function leaveFamily() {
     if (!confirm(`Excluir a família "${d.name}"? Todos os lançamentos da família serão apagados. Sua área Pessoal não é afetada.`)) return;
     const batch = F.writeBatch(db);
     for (const m of fam.months.keys()) batch.delete(F.doc(db, 'ledgers', fam.id, 'months', m));
+    batch.delete(F.doc(db, 'ledgers', fam.id, 'months', INV_DOC));
     for (const r of requests) batch.delete(F.doc(db, 'ledgers', fam.id, 'requests', r.uid));
     batch.delete(F.doc(db, 'invites', d.inviteCode));
     batch.delete(ledgerRef(fam.id));
@@ -1519,6 +1782,10 @@ function importInto(ledgerId, cats, data, prefix) {
   // (ids do próprio app são mantidos, então restaurar um backup sobrescreve em vez de duplicar)
   const idOf = t => /^[0-9A-Za-z]{20}$/.test(String(t.id)) ? String(t.id) : prefix + String(t.id).replace(/[^0-9A-Za-z]/g, '');
   addTxs(data.transactions.map(t => ({ ...t, id: idOf(t), by: t.by || me.uid, at: t.at || t.updatedAt || Date.now() })), ledgerId);
+  if (Array.isArray(data.investments) && data.investments.length) {
+    const items = Object.fromEntries(data.investments.map(({ id, ...x }) => [idOf({ id }), x]));
+    F.setDoc(F.doc(db, 'ledgers', ledgerId, 'months', INV_DOC), { items }, { merge: true }).catch(fail);
+  }
 }
 $('legacyImport').onclick = () => {
   const s = legacyData(), p = areas.personal; if (!s || !p) return;
@@ -1540,7 +1807,7 @@ function download(name, text, type) {
 }
 const areaSlug = () => area === 'family' ? 'familia' : 'pessoal';
 $('exportJson').onclick = () => download(`financas-${areaSlug()}-${new Date().toISOString().slice(0, 10)}.json`,
-  JSON.stringify({ area, categories: state.categories, transactions: state.transactions }, null, 2), 'application/json');
+  JSON.stringify({ area, categories: state.categories, transactions: state.transactions, investments: state.investments }, null, 2), 'application/json');
 $('exportCsv').onclick = () => {
   const lines = ['Data;Tipo;Descrição;Categoria;Valor;Situação'];
   [...state.transactions].sort((a, b) => a.date.localeCompare(b.date)).forEach(t =>

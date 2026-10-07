@@ -3,8 +3,12 @@
 //  descreva as mudanças. É isso que faz os aparelhos mostrarem
 //  o aviso "Nova versão disponível".
 // ============================================================
-const VERSION = '1.1.1';
+const VERSION = '1.3.0';
 const CHANGES = [
+  'Aportes e resgates nos investimentos, com histórico',
+  'Opção de lançar aportes e resgates no mês',
+  'Card de patrimônio total (saldo + investimentos)',
+  'Investimentos: cadastre poupança, CDB, ações e outros, e acompanhe o rendimento',
   'Novo logo do app',
   'Despesas pagas e a pagar: marque com um toque, veja o total a pagar e as atrasadas',
 ];
