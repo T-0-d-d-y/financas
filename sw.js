@@ -3,8 +3,12 @@
 //  descreva as mudanças. É isso que faz os aparelhos mostrarem
 //  o aviso "Nova versão disponível".
 // ============================================================
-const VERSION = '1.3.0';
+const VERSION = '1.5.0';
 const CHANGES = [
+  'Nova navegação por abas: Início, Lançar, Compras, Investir e Mais',
+  'Contas a pagar no Início, com botão para marcar como paga',
+  'Lista de compras: catálogo de itens, quantidade, valor pago e último preço',
+  'Finalizar compra lança o total como despesa do mês',
   'Aportes e resgates nos investimentos, com histórico',
   'Opção de lançar aportes e resgates no mês',
   'Card de patrimônio total (saldo + investimentos)',

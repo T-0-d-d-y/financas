@@ -36,7 +36,7 @@
   .month-nav { display: flex; align-items: center; gap: 8px; }
   .month-nav span { min-width: 150px; text-align: center; font-weight: 600; }
   main { max-width: 1100px; margin: 0 auto; padding: 20px 16px 60px; display: grid; gap: 16px; }
-  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(175px, 1fr)); gap: 12px; }
   .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
   .card h2 { font-size: 15px; margin: 0 0 12px; }
   .stat .label { color: var(--muted); font-size: 13px; }
@@ -84,6 +84,22 @@
   .inv-item .vals { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .inv-item .vals b { display: block; }
   .inv-form { display: grid; gap: 10px; }
+  .shop-sum { font-size: 14px; color: var(--muted); margin: 12px 0 4px; }
+  .shop-sum b { color: var(--text); }
+  .shop-sec { font-size: 12px; font-weight: 700; color: var(--muted); margin: 14px 0 2px; text-transform: uppercase; letter-spacing: .5px; }
+  .shop-item { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--border); }
+  .shop-item input[type=checkbox] { width: 22px; height: 22px; min-height: 0; flex: none; accent-color: #16a34a; }
+  .shop-item .what { flex: 1; min-width: 0; cursor: pointer; padding: 4px 0; }
+  .shop-item .what b { font-weight: 500; overflow-wrap: anywhere; }
+  .shop-item .what .muted { display: block; }
+  .shop-item.done .what b { text-decoration: line-through; color: var(--muted); }
+  .shop-item .price { font-variant-numeric: tabular-nums; white-space: nowrap; font-size: 14px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { border-radius: 999px; padding: 6px 12px; font-size: 14px; }
+  .chip.on { background: #2563eb; border-color: #2563eb; color: #fff; }
+  .qty-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  #pickDlg h3 { margin: 14px 0 6px; }
+  #pickDlg .dlg-foot { position: sticky; bottom: -16px; background: var(--card); padding: 12px 0; margin-bottom: -4px; border-top: 1px solid var(--border); }
   dialog { overflow-y: auto; }
   .moves { display: grid; gap: 10px; border-top: 1px solid var(--border); padding-top: 4px; }
   .moves h3 { margin: 8px 0 0; }
@@ -122,7 +138,37 @@
   .cat-item { display: flex; gap: 6px; align-items: center; }
   .cat-item input[type=number] { width: 110px; }
   .muted { color: var(--muted); font-size: 12px; }
-  .fab { display: none; }
+
+  /* ===== Navegação por abas ===== */
+  .view { display: grid; gap: 16px; }
+  .view:not(.on) { display: none; }
+  .tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 15; display: flex; background: var(--card);
+    border-top: 1px solid var(--border); padding-bottom: env(safe-area-inset-bottom); }
+  .tabbar button { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; border: none; border-radius: 0;
+    background: transparent; color: var(--muted); font-size: 11px; padding: 8px 0 7px; position: relative; min-height: 0 !important; }
+  .tabbar button:hover { border: none; color: var(--text); }
+  .tabbar svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .tabbar button.on { color: var(--blue); font-weight: 600; }
+  .tabbar .count { position: absolute; top: 3px; left: calc(50% + 6px); margin: 0; font-size: 11px; min-width: 18px; line-height: 18px; padding: 0 5px; }
+  main { padding-bottom: calc(90px + env(safe-area-inset-bottom)); }
+  /* o mês só importa no Início e em Lançar */
+  #appRoot[data-view="compras"] .month-nav, #appRoot[data-view="investir"] .month-nav, #appRoot[data-view="mais"] .month-nav { display: none; }
+  .pend-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid var(--border); font-size: 14px; }
+  .pend-row .what { flex: 1; min-width: 0; }
+  .pend-row .what b { font-weight: 500; display: block; overflow-wrap: anywhere; }
+  .pend-row .amt { font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--red); font-weight: 600; }
+
+  @media (min-width: 900px) {
+    #appRoot { display: grid; grid-template-columns: 200px minmax(0, 1fr); grid-template-areas: "head head" "nav main"; }
+    #appRoot > header { grid-area: head; position: sticky; top: 0; z-index: 10; }
+    .tabbar { grid-area: nav; position: sticky; top: 80px; align-self: start; flex-direction: column; gap: 4px;
+      border: none; background: transparent; padding: 20px 0 0 12px; z-index: 1; }
+    .tabbar button { flex-direction: row; gap: 12px; padding: 10px 14px; font-size: 15px; border-radius: 10px; justify-content: flex-start; }
+    .tabbar button.on { background: var(--card); box-shadow: 0 0 0 1px var(--border); }
+    .tabbar svg { width: 22px; height: 22px; }
+    .tabbar .count { position: static; margin-left: auto; }
+    main { grid-area: main; width: 100%; margin: 0; padding-bottom: 60px; }
+  }
   .brand { display: flex; align-items: center; gap: 10px; }
   .brand h1 { display: flex; align-items: center; gap: 8px; }
   .brand-logo { width: 28px; height: 28px; flex: none; }
@@ -186,6 +232,8 @@
     .month-nav span { min-width: 0; flex: 1; font-size: 15px; }
     .month-nav button { min-width: 44px; min-height: 40px; }
     main { padding: 12px 12px calc(90px + env(safe-area-inset-bottom)); gap: 12px; }
+    .view { gap: 12px; }
+    .update-bar { bottom: calc(76px + env(safe-area-inset-bottom)); }
     .card { padding: 14px; }
 
     /* resumo em 2x2 */
@@ -244,13 +292,12 @@
     .inv-item .vals { font-size: 14px; }
     .inv-pair { grid-template-columns: 1fr; }
     #invTypes .bar-row { grid-template-columns: 1fr; }
+    .chip { min-height: 38px !important; }
+    .shop-item input[type=checkbox] { width: 26px; height: 26px; }
     .cat-item input[type=number] { width: 90px; }
     dialog { padding: 14px; max-height: 90vh; }
     .code { font-size: 19px; }
     .member .acts button { min-height: 36px; }
-
-    /* botão flutuante para novo lançamento */
-    .fab { display: flex; align-items: center; justify-content: center; position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom)); width: 58px; height: 58px; border-radius: 50%; background: #2563eb; color: #fff; border: none; font-size: 30px; line-height: 1; box-shadow: 0 4px 14px rgba(0,0,0,.25); z-index: 20; }
   }
 </style>
 </head>
@@ -321,7 +368,16 @@
   </div>
 </header>
 
+<nav class="tabbar" id="tabbar" aria-label="Seções do app">
+  <button data-go="inicio"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg><span>Início</span></button>
+  <button data-go="lancar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5h11M9 12h11M9 19h11"/><path d="M4 5h.01M4 12h.01M4 19h.01"/></svg><span>Lançar</span></button>
+  <button data-go="compras"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2l2.4 11h11.2L21 7H6.2"/><circle cx="9" cy="19.5" r="1.5"/><circle cx="17" cy="19.5" r="1.5"/></svg><span>Compras</span><span class="count" id="badgeShop" hidden></span></button>
+  <button data-go="investir"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg><span>Investir</span></button>
+  <button data-go="mais"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg><span>Mais</span><span class="count" id="badgeMore" hidden></span></button>
+</nav>
+
 <main>
+<div class="view" data-view="inicio">
   <section class="cards">
     <div class="card stat"><div class="label">Receitas do mês</div><div class="value pos" id="sumIn">R$ 0,00</div></div>
     <div class="card stat"><div class="label">Despesas do mês</div><div class="value neg" id="sumOut">R$ 0,00</div><div class="sub" id="sumOutSub"></div></div>
@@ -344,6 +400,29 @@
     </div>
   </section>
 
+  <section class="card">
+    <h2 class="head-row"><span>Contas a pagar</span><button id="seeAllPend">Ver todas</button></h2>
+    <div id="pendList"></div>
+  </section>
+
+  <section class="grid2">
+    <div class="card">
+      <h2>Despesas por categoria</h2>
+      <div id="catChart"></div>
+    </div>
+    <div class="card">
+      <h2 id="budgetsTitle" style="display:flex;justify-content:space-between;align-items:center">Orçamentos <button id="editCats">Categorias e limites</button></h2>
+      <div id="budgets"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Últimos 6 meses</h2>
+    <div id="history"></div>
+  </section>
+</div>
+
+<div class="view" data-view="lancar">
   <section class="card">
     <h2><span id="formTitle">Nova transação</span><span class="area-tag" id="formArea"></span></h2>
     <form class="tx" id="txForm">
@@ -371,31 +450,7 @@
     </label>
   </section>
 
-  <section class="grid2">
-    <div class="card">
-      <h2>Despesas por categoria</h2>
-      <div id="catChart"></div>
-    </div>
-    <div class="card">
-      <h2 id="budgetsTitle" style="display:flex;justify-content:space-between;align-items:center">Orçamentos <button id="editCats">Categorias e limites</button></h2>
-      <div id="budgets"></div>
-    </div>
-  </section>
-
-  <section class="card">
-    <h2>Últimos 6 meses</h2>
-    <div id="history"></div>
-  </section>
-
-  <section class="card">
-    <h2 class="head-row"><span>Investimentos<span class="area-tag" id="invArea"></span></span>
-      <button class="primary" id="invAdd">+ Adicionar</button></h2>
-    <div class="inv-sum" id="invSum"></div>
-    <div id="invTypes"></div>
-    <div id="invList"></div>
-  </section>
-
-  <section class="card">
+  <section class="card" id="txCard">
     <h2>Transações do mês</h2>
     <div class="toolbar">
       <input id="search" placeholder="Buscar descrição...">
@@ -408,7 +463,37 @@
       <tbody id="txBody"></tbody>
     </table></div>
   </section>
+</div>
 
+<div class="view" data-view="compras">
+  <section class="card" id="shopCard">
+    <h2 class="head-row"><span>Lista de compras<span class="area-tag" id="shopArea"></span></span>
+      <button id="shopPick">Escolher itens</button></h2>
+    <form class="fam-form" id="shopForm">
+      <input id="shopInput" list="shopCatalog" placeholder="Adicionar item (ex.: arroz)" autocomplete="off">
+      <button class="primary" type="submit">Adicionar</button>
+    </form>
+    <datalist id="shopCatalog"></datalist>
+    <div class="shop-sum" id="shopSum"></div>
+    <div id="shopList"></div>
+    <div class="actions" id="shopActions" hidden style="margin-top:12px">
+      <button class="primary" id="shopFinish">Finalizar compra</button>
+      <button id="shopClear">Limpar lista</button>
+    </div>
+  </section>
+</div>
+
+<div class="view" data-view="investir">
+  <section class="card">
+    <h2 class="head-row"><span>Investimentos<span class="area-tag" id="invArea"></span></span>
+      <button class="primary" id="invAdd">+ Adicionar</button></h2>
+    <div class="inv-sum" id="invSum"></div>
+    <div id="invTypes"></div>
+    <div id="invList"></div>
+  </section>
+</div>
+
+<div class="view" data-view="mais">
   <section class="card">
     <h2>Conta e família</h2>
     <p class="muted" id="accountInfo"></p>
@@ -416,6 +501,12 @@
       <button class="primary" id="openFam">Família</button>
       <button id="openAccount">Minha conta</button>
     </div>
+  </section>
+
+  <section class="card">
+    <h2>Categorias e orçamentos</h2>
+    <p class="muted">Crie, renomeie ou remova categorias e defina limites mensais de gasto para a área aberta.</p>
+    <div class="actions"><button id="editCats2">Categorias e limites</button></div>
   </section>
 
   <section class="card" id="installCard" hidden>
@@ -435,9 +526,8 @@
       <input type="file" id="fileIn" accept=".json" hidden>
     </div>
   </section>
+</div>
 </main>
-
-<button class="fab" id="fab" aria-label="Novo lançamento">+</button>
 </div>
 
 <div class="update-bar" id="updateBar" role="status" hidden>
@@ -448,6 +538,47 @@
     <button class="primary" id="updateNow">Atualizar agora</button>
   </div>
 </div>
+
+<dialog id="pickDlg">
+  <h2>Escolher itens</h2>
+  <input id="pickSearch" placeholder="Buscar (ex.: leite)" autocomplete="off">
+  <p class="muted">Toque para colocar ou tirar da lista.</p>
+  <div id="pickBody"></div>
+  <div class="dlg-foot"><button class="primary" id="pickDone">Pronto</button></div>
+</dialog>
+
+<dialog id="itemDlg">
+  <h2 id="itemTitle"></h2>
+  <form id="itemForm" class="inv-form">
+    <div class="qty-row">
+      <label class="f">Quantidade <input id="itQty" inputmode="decimal" placeholder="Ex.: 2"></label>
+      <label class="f">Unidade <select id="itUnit"></select></label>
+    </div>
+    <label class="f">Valor pago pelo item (R$) <input id="itPrice" inputmode="decimal" placeholder="Opcional, ex.: 12,90"></label>
+    <p class="muted" id="itLast" style="margin:0"></p>
+    <label class="check-row"><input type="checkbox" id="itDone"> <span>Já está no carrinho</span></label>
+    <div class="auth-msg" id="itMsg" hidden></div>
+    <div class="dlg-foot">
+      <button type="button" id="itCancel">Cancelar</button>
+      <button class="primary" type="submit">Salvar</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="finDlg">
+  <h2>Finalizar compra</h2>
+  <p id="finInfo"></p>
+  <label class="check-row"><input type="checkbox" id="finLaunch"> <span id="finLaunchLbl"></span></label>
+  <div class="inv-pair" id="finFields">
+    <label class="f">Descrição <input id="finDesc" value="Supermercado"></label>
+    <label class="f">Categoria <select id="finCat"></select></label>
+  </div>
+  <p class="muted">Os itens comprados saem da lista; os que não foram para o carrinho continuam nela.</p>
+  <div class="dlg-foot">
+    <button id="finCancel">Cancelar</button>
+    <button class="primary" id="finOk">Finalizar</button>
+  </div>
+</dialog>
 
 <dialog id="invDlg">
   <h2 id="invDlgTitle">Novo investimento</h2>
@@ -580,13 +711,26 @@ let famView = 'members';
 const areas = { personal: null, family: null };
 let area = lsGet(AREA_KEY) === 'family' ? 'family' : 'personal';
 // visão da área aberta, usada por toda a tela
-let state = { categories: DEFAULT_CATS, transactions: [], investments: [] };
+let state = { categories: DEFAULT_CATS, transactions: [], investments: [], shopping: [], lastPrices: {} };
 // investimentos ficam num documento especial dentro de "months" da área
 // (mesma permissão dos lançamentos: só membros leem e gravam)
 const INV_DOC = '_investimentos';
 const INV_TYPES = ['Poupança', 'CDB / LCI / LCA', 'Tesouro Direto', 'Ações', 'Fundos imobiliários', 'Fundos de investimento', 'Previdência', 'Criptomoedas', 'Outros'];
 // cores próprias, sem vermelho/verde (que no app significam perda/ganho)
 const INV_COLORS = ['#0891b2', '#2563eb', '#7c3aed', '#d97706', '#0d9488', '#4f46e5', '#db2777', '#ca8a04', '#64748b'];
+// lista de compras: { items: {id: item}, last: {nome-normalizado: último preço pago} }
+const SHOP_DOC = '_compras';
+const SHOP_UNITS = ['un', 'kg', 'g', 'L', 'ml', 'pct', 'cx', 'dz'];
+const SHOP_CATALOG = {
+  'Hortifrúti': ['Alface', 'Tomate', 'Cebola', 'Alho', 'Batata', 'Batata-doce', 'Cenoura', 'Abobrinha', 'Pimentão', 'Brócolis', 'Banana', 'Maçã', 'Laranja', 'Limão', 'Mamão', 'Uva', 'Melancia'],
+  'Carnes e peixes': ['Carne moída', 'Bife', 'Peito de frango', 'Coxa e sobrecoxa', 'Linguiça', 'Carne de porco', 'Peixe', 'Bacon'],
+  'Laticínios e frios': ['Leite', 'Ovos', 'Queijo muçarela', 'Presunto', 'Manteiga', 'Margarina', 'Iogurte', 'Requeijão', 'Creme de leite', 'Leite condensado'],
+  'Padaria': ['Pão francês', 'Pão de forma', 'Bolo', 'Torrada', 'Biscoito'],
+  'Mercearia': ['Arroz', 'Feijão', 'Macarrão', 'Açúcar', 'Sal', 'Café', 'Óleo', 'Azeite', 'Farinha de trigo', 'Farofa', 'Molho de tomate', 'Achocolatado', 'Aveia', 'Fubá', 'Milho em conserva', 'Atum em lata', 'Temperos'],
+  'Bebidas': ['Água', 'Refrigerante', 'Suco', 'Cerveja', 'Vinho'],
+  'Limpeza': ['Detergente', 'Sabão em pó', 'Amaciante', 'Água sanitária', 'Desinfetante', 'Limpador multiuso', 'Esponja', 'Papel toalha', 'Saco de lixo'],
+  'Higiene': ['Papel higiênico', 'Sabonete', 'Shampoo', 'Condicionador', 'Creme dental', 'Escova de dente', 'Fio dental', 'Desodorante', 'Absorvente'],
+};
 let txType = 'despesa';
 let editingId = null;
 let cur = new Date(); cur.setDate(1);
@@ -778,8 +922,10 @@ function watchArea(key, id, attempt = 0) {
     refresh();
   }, onErr));
   a.unsubs.push(F.onSnapshot(F.collection(db, 'ledgers', id, 'months'), { includeMetadataChanges: true }, s => {
-    a.months = new Map(s.docs.filter(d => d.id !== INV_DOC).map(d => [d.id, d.data().txs || {}]));
+    // documentos que começam com "_" são especiais (investimentos, lista de compras), não meses
+    a.months = new Map(s.docs.filter(d => !d.id.startsWith('_')).map(d => [d.id, d.data().txs || {}]));
     a.investments = s.docs.find(d => d.id === INV_DOC)?.data().items || {};
+    a.shopping = s.docs.find(d => d.id === SHOP_DOC)?.data() || {};
     a.pending = s.metadata.hasPendingWrites;
     a.loaded = true;
     refresh();
@@ -815,12 +961,16 @@ function refresh() {
   if (a) for (const monthTxs of a.months.values())
     for (const [id, t] of Object.entries(monthTxs)) txs.push({ ...t, id });
   state = { categories: a?.doc?.categories || DEFAULT_CATS, transactions: txs,
-    investments: Object.entries(a?.investments || {}).map(([id, v]) => ({ ...v, id })) };
+    investments: Object.entries(a?.investments || {}).map(([id, v]) => ({ ...v, id })),
+    shopping: Object.entries(a?.shopping?.items || {}).map(([id, v]) => ({ ...v, id })),
+    lastPrices: a?.shopping?.last || {} };
   if (editingId != null && !txs.some(t => t.id === editingId)) endEdit(true);
   fillCatSelects();
   render();
   renderHeader();
   if ($('famDlg').open) renderFam();
+  if ($('pickDlg').open) renderPick();
+  if ($('itemDlg').open && !state.shopping.some(i => i.id === shopEditing)) $('itemDlg').close(); // tirado em outro aparelho
   if ($('invDlg').open && invEditing) {
     if (invById(invEditing)) renderMoves(); else $('invDlg').close(); // excluído em outro aparelho
   }
@@ -833,6 +983,7 @@ function renderHeader() {
   $('famTab').innerHTML = '👨‍👩‍👧 ' + esc(profile.familyId ? (fam?.name || 'Família') : 'Família') +
     (requests.length ? `<span class="count">${requests.length}</span>` : profile.pending && !profile.familyId ? ' ⏳' : '');
   $('reqCard').hidden = !requests.length;
+  updateBadges();
   $('reqInfo').textContent = requests.length === 1
     ? `📩 ${requests[0].name || requests[0].email} pediu para entrar na família`
     : `📩 ${requests.length} pedidos para entrar na família`;
@@ -1006,6 +1157,9 @@ function render() {
     ? (v < 0 ? '−' : '') + Math.abs(v).toLocaleString('pt-BR', { notation: 'compact', maximumFractionDigits: 1 })
     : brl(v).replace(/,\d\d$/, '');
   renderInvestments();
+  renderShopping();
+  renderPending();
+  updateBadges();
   $('history').innerHTML = `<svg viewBox="0 0 ${W} ${H + 40}" style="width:100%;height:auto;display:block">
     ${hs.map((h, k) => {
       const x = k * bw + bw / 2, hi = h.i / hmax * H, ho = h.o / hmax * H;
@@ -1215,6 +1369,218 @@ $('invDel').onclick = () => {
   $('invDlg').close();
 };
 
+// ===== Lista de compras =====
+const normName = s => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+const SECTION_OF = {};
+Object.entries(SHOP_CATALOG).forEach(([sec, list]) => list.forEach(n => { SECTION_OF[normName(n)] = sec; }));
+const SECTIONS = [...Object.keys(SHOP_CATALOG), 'Outros'];
+const shopRef = () => F.doc(db, 'ledgers', areas[area].id, 'months', SHOP_DOC);
+const fmtQty = it => it.qty ? `${String(it.qty).replace('.', ',')} ${it.unit || 'un'}` : '';
+const shopByName = name => state.shopping.find(i => normName(i.name) === normName(name));
+$('itUnit').innerHTML = SHOP_UNITS.map(u => `<option>${u}</option>`).join('');
+
+function renderShopping() {
+  $('shopArea').textContent = area === 'family' ? '· ' + (areas.family?.doc?.name || 'Família') : '· Pessoal';
+  // sugestões: catálogo + itens já comprados antes
+  const names = new Set([...Object.values(SHOP_CATALOG).flat(), ...Object.values(state.lastPrices).map(p => p.name)]);
+  $('shopCatalog').innerHTML = [...names].map(n => `<option value="${esc(n)}">`).join('');
+  const items = state.shopping;
+  $('shopActions').hidden = !items.length;
+  if (!items.length) {
+    $('shopSum').innerHTML = '';
+    $('shopList').innerHTML = '<div class="empty">A lista está vazia. Digite um item acima ou toque em "Escolher itens".</div>';
+    return;
+  }
+  const done = items.filter(i => i.done), total = items.reduce((s, i) => s + (i.price || 0), 0);
+  $('shopSum').innerHTML = `<b>${done.length} de ${items.length}</b> no carrinho` + (total ? ` · Total <b>${brl(total)}</b>` : '');
+  // agrupa por seção do mercado; comprados vão para o fim de cada seção
+  const groups = {};
+  items.forEach(i => (groups[SECTION_OF[normName(i.name)] || 'Outros'] ||= []).push(i));
+  $('shopList').innerHTML = SECTIONS.filter(s => groups[s]).map(sec => `<div class="shop-sec">${sec}</div>` +
+    groups[sec].sort((a, b) => (a.done - b.done) || a.name.localeCompare(b.name)).map(i => {
+      const detail = fmtQty(i);
+      return `<div class="shop-item${i.done ? ' done' : ''}">
+        <input type="checkbox" data-check="${i.id}" ${i.done ? 'checked' : ''} aria-label="No carrinho">
+        <div class="what" data-open="${i.id}"><b>${esc(i.name)}</b>${detail ? `<span class="muted">${detail}</span>` : ''}</div>
+        ${i.price ? `<span class="price">${brl(i.price)}</span>` : ''}
+        <button class="icon" data-rm="${i.id}" title="Tirar da lista" aria-label="Tirar da lista">✕</button>
+      </div>`;
+    }).join('')).join('');
+}
+
+function addShopItem(name) {
+  name = name.trim(); if (!name || !areas[area]) return false;
+  if (shopByName(name)) return false; // já está na lista
+  const catalogName = Object.values(SHOP_CATALOG).flat().find(n => normName(n) === normName(name));
+  F.setDoc(shopRef(), { items: { [newId()]: {
+    name: catalogName || name[0].toUpperCase() + name.slice(1), qty: null, unit: 'un', price: null, done: false, at: Date.now(), by: me.uid,
+  } } }, { merge: true }).catch(fail);
+  return true;
+}
+$('shopForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const v = $('shopInput').value;
+  if (v.trim() && !addShopItem(v)) { $('shopInput').select(); alert(`"${v.trim()}" já está na lista.`); return; }
+  $('shopInput').value = '';
+});
+$('shopList').addEventListener('click', e => {
+  const t = e.target;
+  if (t.dataset.check) { F.updateDoc(shopRef(), { [`items.${t.dataset.check}.done`]: t.checked }).catch(fail); return; }
+  if (t.closest('[data-rm]')) { F.updateDoc(shopRef(), { [`items.${t.closest('[data-rm]').dataset.rm}`]: F.deleteField() }).catch(fail); return; }
+  const open = t.closest('[data-open]')?.dataset.open;
+  if (open) openShopItem(open);
+});
+
+// catálogo para escolher vários de uma vez
+function renderPick() {
+  const q = normName($('pickSearch').value);
+  const inList = new Set(state.shopping.map(i => normName(i.name)));
+  const html = Object.entries(SHOP_CATALOG).map(([sec, list]) => {
+    const shown = list.filter(n => !q || normName(n).includes(q));
+    return shown.length ? `<h3>${sec}</h3><div class="chips">${shown.map(n =>
+      `<button type="button" class="chip${inList.has(normName(n)) ? ' on' : ''}" data-pick="${esc(n)}">${inList.has(normName(n)) ? '✓ ' : ''}${esc(n)}</button>`).join('')}</div>` : '';
+  }).join('');
+  const typed = $('pickSearch').value.trim();
+  $('pickBody').innerHTML = html || `<div class="empty">Nada no catálogo com "${esc(typed)}".</div>` +
+    (typed ? `<button type="button" class="primary" data-pick="${esc(typed)}">Adicionar "${esc(typed)}" à lista</button>` : '');
+}
+$('shopPick').onclick = () => { $('pickSearch').value = ''; renderPick(); $('pickDlg').showModal(); };
+$('pickSearch').addEventListener('input', renderPick);
+$('pickDone').onclick = () => $('pickDlg').close();
+$('pickBody').addEventListener('click', e => {
+  const name = e.target.closest('[data-pick]')?.dataset.pick; if (!name) return;
+  const it = shopByName(name);
+  if (it) F.updateDoc(shopRef(), { [`items.${it.id}`]: F.deleteField() }).catch(fail);
+  else addShopItem(name);
+  if (!SECTION_OF[normName(name)]) $('pickSearch').value = '';
+});
+
+// detalhes do item: quantidade, unidade e valor pago (tudo opcional)
+let shopEditing = null;
+function openShopItem(id) {
+  const it = state.shopping.find(i => i.id === id); if (!it) return;
+  shopEditing = id;
+  $('itemTitle').textContent = it.name;
+  $('itQty').value = it.qty ? String(it.qty).replace('.', ',') : '';
+  $('itUnit').value = it.unit || 'un';
+  $('itPrice').value = it.price ? it.price.toFixed(2).replace('.', ',') : '';
+  $('itDone').checked = !!it.done;
+  $('itMsg').hidden = true;
+  const last = state.lastPrices[normName(it.name)];
+  $('itLast').textContent = last?.price
+    ?`Última compra: ${last.qty ? String(last.qty).replace('.', ',') + ' ' + last.unit + ' por ' : ''}${brl(last.price)} em ${new Date(last.at).toLocaleDateString('pt-BR')}.`
+    : '';
+  $('itemDlg').showModal();
+}
+$('itCancel').onclick = () => $('itemDlg').close();
+$('itemForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const qRaw = $('itQty').value.trim(), pRaw = $('itPrice').value.trim();
+  const qty = qRaw ? parseFloat(qRaw.replace(',', '.')) : null, price = pRaw ? parseVal(pRaw) : null;
+  if ((qRaw && !(qty > 0)) || (pRaw && !(price >= 0))) {
+    $('itMsg').hidden = false; $('itMsg').textContent = 'Confira os números (ex.: quantidade 1,5 e valor 12,90).'; return;
+  }
+  const id = shopEditing;
+  F.updateDoc(shopRef(), {
+    [`items.${id}.qty`]: qty, [`items.${id}.unit`]: $('itUnit').value,
+    [`items.${id}.price`]: price, [`items.${id}.done`]: $('itDone').checked,
+  }).catch(fail);
+  $('itemDlg').close();
+});
+
+// finalizar: tira os comprados da lista, guarda o último preço e (opcional) lança a despesa
+$('shopFinish').onclick = () => {
+  const done = state.shopping.filter(i => i.done);
+  if (!done.length) { alert('Marque no ✓ os itens que foram para o carrinho antes de finalizar.'); return; }
+  const total = done.reduce((s, i) => s + (i.price || 0), 0), noPrice = done.filter(i => !i.price).length;
+  $('finInfo').textContent = `${done.length} item(ns) comprado(s)` + (total ? `, total de ${brl(total)}` : '') +
+    (noPrice && total ? ` (${noPrice} sem valor informado).` : '.');
+  $('finLaunch').checked = total > 0;
+  $('finLaunch').disabled = !total;
+  $('finLaunchLbl').textContent = total ? `Lançar ${brl(total)} como despesa paga de hoje` : 'Sem valores informados: nada a lançar no mês';
+  const cats = state.categories.filter(c => c.type === 'despesa');
+  $('finCat').innerHTML = cats.map(c => `<option>${esc(c.name)}</option>`).join('');
+  $('finCat').value = cats.some(c => c.name === 'Alimentação') ? 'Alimentação' : cats[0]?.name;
+  $('finFields').hidden = !total;
+  $('finDlg').showModal();
+};
+$('finLaunch').onchange = () => { $('finFields').hidden = !$('finLaunch').checked; };
+$('finCancel').onclick = () => $('finDlg').close();
+$('finOk').onclick = () => {
+  const done = state.shopping.filter(i => i.done);
+  const total = Math.round(done.reduce((s, i) => s + (i.price || 0), 0) * 100) / 100;
+  const batch = F.writeBatch(db), fields = {}, last = {};
+  done.forEach(i => {
+    fields[`items.${i.id}`] = F.deleteField();
+    // lembra todo item comprado (para sugerir depois); o preço só é trocado quando foi informado
+    last[normName(i.name)] = i.price
+      ? { name: i.name, price: i.price, qty: i.qty || null, unit: i.unit || 'un', at: Date.now() }
+      : { name: i.name };
+  });
+  batch.update(shopRef(), fields);
+  batch.set(shopRef(), { last }, { merge: true });
+  if ($('finLaunch').checked && total > 0) {
+    const date = todayStr();
+    batch.set(monthRef(date), { txs: { [newId()]: txData({
+      type: 'despesa', desc: ($('finDesc').value.trim() || 'Supermercado') + ` (${done.length} itens)`,
+      category: $('finCat').value, amount: total, date, paid: true }) } }, { merge: true });
+  }
+  commit(batch);
+  $('finDlg').close();
+};
+$('shopClear').onclick = () => {
+  if (!confirm('Limpar a lista de compras inteira?')) return;
+  F.updateDoc(shopRef(), { items: {} }).catch(fail);
+};
+
+// ===== Navegação por abas =====
+const VIEWS = ['inicio', 'lancar', 'compras', 'investir', 'mais'];
+const VIEW_KEY = 'financas-view';
+function showView(v) {
+  if (!VIEWS.includes(v)) v = 'inicio';
+  document.querySelectorAll('.view').forEach(el => el.classList.toggle('on', el.dataset.view === v));
+  document.querySelectorAll('#tabbar [data-go]').forEach(b => {
+    b.classList.toggle('on', b.dataset.go === v);
+    if (b.dataset.go === v) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
+  });
+  $('appRoot').dataset.view = v;
+  lsSet(VIEW_KEY, v);
+  scrollTo(0, 0);
+  render(); // o gráfico dos 6 meses precisa da largura da tela visível
+}
+// cada aba vira um endereço (#compras…): o botão "voltar" do celular volta para a aba anterior
+const go = v => { if (location.hash.slice(1) !== v) location.hash = v; else showView(v); };
+addEventListener('hashchange', () => showView(location.hash.slice(1)));
+$('tabbar').addEventListener('click', e => { const b = e.target.closest('[data-go]'); if (b) go(b.dataset.go); });
+$('seeAllPend').onclick = () => { $('filterPaid').value = 'pend'; go('lancar'); };
+$('editCats2').onclick = () => $('editCats').click();
+
+function updateBadges() {
+  const toBuy = state.shopping.filter(i => !i.done).length;
+  $('badgeShop').hidden = !toBuy; $('badgeShop').textContent = toBuy;
+  $('badgeMore').hidden = !requests.length; $('badgeMore').textContent = requests.length;
+}
+
+// contas a pagar no Início: as do mês aberto e as atrasadas de meses anteriores
+function renderPending() {
+  const end = ym(cur) + '-31', today = todayStr();
+  const pend = state.transactions.filter(t => t.type === 'despesa' && !isPaid(t) && t.date <= end)
+    .sort((a, b) => a.date.localeCompare(b.date));
+  const shown = pend.slice(0, 6);
+  $('seeAllPend').hidden = !pend.length;
+  $('pendList').innerHTML = shown.length ? shown.map(t => `<div class="pend-row">
+      <span class="muted">${t.date.slice(8, 10)}/${t.date.slice(5, 7)}</span>
+      <div class="what"><b>${esc(t.desc)}</b>${t.date < today ? '<span class="muted" style="color:var(--red)">Atrasada</span>' : ''}</div>
+      <span class="amt">${brl(t.amount)}</span>
+      <button class="paid-pill pend" data-pay="${t.id}">Pagar</button></div>`).join('') +
+      (pend.length > shown.length ? `<div class="muted" style="padding-top:8px">e mais ${pend.length - shown.length}…</div>` : '')
+    : '<div class="empty">Nenhuma conta a pagar neste mês.</div>';
+}
+$('pendList').addEventListener('click', e => {
+  const id = e.target.closest('[data-pay]')?.dataset.pay; if (!id) return;
+  const t = state.transactions.find(x => x.id === id); if (t) setPaid(t, true);
+});
+
 // ===== Formulário =====
 function setType(t) {
   txType = t;
@@ -1261,11 +1627,6 @@ function endEdit(silent) {
   if (!silent) render();
 }
 $('cancelEdit').onclick = () => endEdit();
-$('fab').onclick = () => {
-  if (editingId != null) endEdit();
-  $('txForm').scrollIntoView({ behavior: 'smooth', block: 'center' });
-  $('fDesc').focus({ preventScroll: true });
-};
 let lastW = innerWidth, resizeT;
 addEventListener('resize', () => {
   if (innerWidth === lastW) return; // ignora a barra do navegador do celular aparecendo/sumindo
@@ -1587,6 +1948,7 @@ async function leaveFamily() {
     const batch = F.writeBatch(db);
     for (const m of fam.months.keys()) batch.delete(F.doc(db, 'ledgers', fam.id, 'months', m));
     batch.delete(F.doc(db, 'ledgers', fam.id, 'months', INV_DOC));
+    batch.delete(F.doc(db, 'ledgers', fam.id, 'months', SHOP_DOC));
     for (const r of requests) batch.delete(F.doc(db, 'ledgers', fam.id, 'requests', r.uid));
     batch.delete(F.doc(db, 'invites', d.inviteCode));
     batch.delete(ledgerRef(fam.id));
@@ -1920,7 +2282,11 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 $('fDate').value = new Date().toLocaleDateString('sv-SE');
 syncPaidBox();
 fillCatSelects();
-render();
+{ // abre na aba do endereço (#compras) ou na última usada
+  const v = VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : (VIEWS.includes(lsGet(VIEW_KEY)) ? lsGet(VIEW_KEY) : 'inicio');
+  history.replaceState(null, '', '#' + v);
+  showView(v);
+}
 boot();
 </script>
 </body>
