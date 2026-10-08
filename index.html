@@ -98,6 +98,13 @@
   .chip { border-radius: 999px; padding: 6px 12px; font-size: 14px; }
   .chip.on { background: #2563eb; border-color: #2563eb; color: #fff; }
   .qty-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .var { font-size: 12px; font-weight: 600; white-space: nowrap; }
+  .var.up { color: var(--red); } .var.down { color: var(--green); } .var.flat { color: var(--muted); }
+  .ph-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid var(--border); cursor: pointer; }
+  .ph-row .what { flex: 1; min-width: 0; }
+  .ph-row .what b { font-weight: 500; display: block; overflow-wrap: anywhere; }
+  .ph-row .what .muted { display: block; }
+  .ph-item { display: flex; justify-content: space-between; gap: 8px; padding: 7px 0; border-top: 1px solid var(--border); font-size: 14px; font-variant-numeric: tabular-nums; }
   #pickDlg h3 { margin: 14px 0 6px; }
   #pickDlg .dlg-foot { position: sticky; bottom: -16px; background: var(--card); padding: 12px 0; margin-bottom: -4px; border-top: 1px solid var(--border); }
   dialog { overflow-y: auto; }
@@ -481,6 +488,12 @@
       <button id="shopClear">Limpar lista</button>
     </div>
   </section>
+
+  <section class="card" id="priceCard">
+    <h2>Histórico de preços</h2>
+    <p class="muted" style="margin-top:-6px">Variação do preço por unidade (kg, litro, unidade) nos últimos 12 meses, a partir dos valores informados ao finalizar as compras.</p>
+    <div id="priceList"></div>
+  </section>
 </div>
 
 <div class="view" data-view="investir">
@@ -545,6 +558,15 @@
   <p class="muted">Toque para colocar ou tirar da lista.</p>
   <div id="pickBody"></div>
   <div class="dlg-foot"><button class="primary" id="pickDone">Pronto</button></div>
+</dialog>
+
+<dialog id="priceDlg">
+  <h2 id="phTitle"></h2>
+  <p id="phSummary" style="margin-top:-4px"></p>
+  <div id="phChart"></div>
+  <h3>Compras registradas</h3>
+  <div id="phList"></div>
+  <div class="dlg-foot"><button id="phClose">Fechar</button></div>
 </dialog>
 
 <dialog id="itemDlg">
@@ -711,7 +733,7 @@ let famView = 'members';
 const areas = { personal: null, family: null };
 let area = lsGet(AREA_KEY) === 'family' ? 'family' : 'personal';
 // visão da área aberta, usada por toda a tela
-let state = { categories: DEFAULT_CATS, transactions: [], investments: [], shopping: [], lastPrices: {} };
+let state = { categories: DEFAULT_CATS, transactions: [], investments: [], shopping: [], lastPrices: {}, priceHist: {} };
 // investimentos ficam num documento especial dentro de "months" da área
 // (mesma permissão dos lançamentos: só membros leem e gravam)
 const INV_DOC = '_investimentos';
@@ -963,7 +985,7 @@ function refresh() {
   state = { categories: a?.doc?.categories || DEFAULT_CATS, transactions: txs,
     investments: Object.entries(a?.investments || {}).map(([id, v]) => ({ ...v, id })),
     shopping: Object.entries(a?.shopping?.items || {}).map(([id, v]) => ({ ...v, id })),
-    lastPrices: a?.shopping?.last || {} };
+    lastPrices: a?.shopping?.last || {}, priceHist: a?.shopping?.hist || {} };
   if (editingId != null && !txs.some(t => t.id === editingId)) endEdit(true);
   fillCatSelects();
   render();
@@ -1158,6 +1180,7 @@ function render() {
     : brl(v).replace(/,\d\d$/, '');
   renderInvestments();
   renderShopping();
+  renderPrices();
   renderPending();
   updateBadges();
   $('history').innerHTML = `<svg viewBox="0 0 ${W} ${H + 40}" style="width:100%;height:auto;display:block">
@@ -1398,7 +1421,7 @@ function renderShopping() {
   items.forEach(i => (groups[SECTION_OF[normName(i.name)] || 'Outros'] ||= []).push(i));
   $('shopList').innerHTML = SECTIONS.filter(s => groups[s]).map(sec => `<div class="shop-sec">${sec}</div>` +
     groups[sec].sort((a, b) => (a.done - b.done) || a.name.localeCompare(b.name)).map(i => {
-      const detail = fmtQty(i);
+      const detail = [fmtQty(i), varTag(priceStats(normName(i.name)), true)].filter(Boolean).join(' · ');
       return `<div class="shop-item${i.done ? ' done' : ''}">
         <input type="checkbox" data-check="${i.id}" ${i.done ? 'checked' : ''} aria-label="No carrinho">
         <div class="what" data-open="${i.id}"><b>${esc(i.name)}</b>${detail ? `<span class="muted">${detail}</span>` : ''}</div>
@@ -1407,6 +1430,79 @@ function renderShopping() {
       </div>`;
     }).join('')).join('');
 }
+
+// ----- histórico de preços -----
+// Compara o preço por unidade (g vira kg, ml vira L), não o total pago.
+const DAY = 864e5;
+const UNIT_BASE = { g: ['kg', 1 / 1000], kg: ['kg', 1], ml: ['L', 1 / 1000], L: ['L', 1] };
+function unitPrice(e) {
+  const [base, f] = UNIT_BASE[e.unit] || [e.unit || 'un', 1];
+  return { base, up: e.price / ((e.qty || 1) * f) };
+}
+const fmtUp = (v, base) => brl(v) + '/' + base;
+// estatísticas de um item nos últimos 12 meses (ou null se nunca teve preço)
+function priceStats(key) {
+  let entries = Object.entries(state.priceHist[key] || {}).map(([id, e]) => ({ ...e, id })).filter(e => e.price > 0);
+  const last = state.lastPrices[key];
+  // compras de antes do histórico existir: o "último preço" serve de ponto de partida
+  if (last?.price && !entries.some(e => e.at === last.at)) entries.push({ ...last, id: null });
+  if (!entries.length) return null;
+  entries.sort((a, b) => a.at - b.at);
+  const latest = entries[entries.length - 1], base = unitPrice(latest).base;
+  const series = entries.filter(e => e.at >= Date.now() - 365 * DAY && unitPrice(e).base === base)
+    .map(e => ({ ...e, up: unitPrice(e).up }));
+  const ups = series.map(s => s.up), first = series[0], now = series[series.length - 1];
+  return {
+    name: latest.name || last?.name || key, base, series, count: series.length, latest: now,
+    min: Math.min(...ups), max: Math.max(...ups),
+    varPct: series.length >= 2 && first.up > 0 ? (now.up - first.up) / first.up * 100 : null,
+  };
+}
+function varTag(st, long) {
+  if (!st || st.varPct == null) return '';
+  const p = Math.round(st.varPct * 10) / 10;
+  const [cls, arrow] = Math.abs(p) < 0.5 ? ['flat', '='] : p > 0 ? ['up', '↑'] : ['down', '↓'];
+  return `<span class="var ${cls}">${arrow} ${Math.abs(p).toLocaleString('pt-BR')}%${long ? ' em 12 meses' : ''}</span>`;
+}
+
+function renderPrices() {
+  const keys = new Set([...Object.keys(state.priceHist), ...Object.keys(state.lastPrices)]);
+  const stats = [...keys].map(k => ({ key: k, st: priceStats(k) })).filter(x => x.st)
+    .sort((a, b) => (b.st.varPct ?? -Infinity) - (a.st.varPct ?? -Infinity) || a.st.name.localeCompare(b.st.name));
+  $('priceCard').hidden = !stats.length;
+  $('priceList').innerHTML = stats.map(({ key, st }) => `<div class="ph-row" data-ph="${key}">
+      <div class="what"><b>${esc(st.name)}</b><span class="muted">${fmtUp(st.latest.up, st.base)} · ${st.count} compra${st.count > 1 ? 's' : ''} em 12 meses</span></div>
+      ${varTag(st) || '<span class="var flat">sem variação ainda</span>'}</div>`).join('');
+}
+$('priceList').addEventListener('click', e => { const k = e.target.closest('[data-ph]')?.dataset.ph; if (k) openPriceHist(k); });
+
+function openPriceHist(key) {
+  const st = priceStats(key); if (!st) return;
+  $('phTitle').textContent = st.name;
+  $('phSummary').innerHTML = st.varPct == null
+    ? `Só uma compra registrada nos últimos 12 meses (${fmtUp(st.latest.up, st.base)}). A variação aparece a partir da segunda.`
+    : `${varTag(st, true)}<br><span class="muted">De ${fmtUp(st.series[0].up, st.base)} para ${fmtUp(st.latest.up, st.base)} · menor ${fmtUp(st.min, st.base)} · maior ${fmtUp(st.max, st.base)}</span>`;
+  // gráfico simples do preço por unidade ao longo do tempo
+  const s = st.series, W = 300, H = 120, P = 14;
+  if (s.length >= 2) {
+    const t0 = s[0].at, t1 = s[s.length - 1].at || t0 + 1, lo = st.min * 0.95, hi = st.max * 1.05 || 1;
+    const x = e => P + (t1 === t0 ? (W - 2 * P) / 2 : (e.at - t0) / (t1 - t0) * (W - 2 * P));
+    const y = e => H - P - (hi === lo ? 0.5 : (e.up - lo) / (hi - lo)) * (H - 2 * P);
+    const color = st.varPct > 0.5 ? 'var(--red)' : st.varPct < -0.5 ? 'var(--green)' : 'var(--blue)';
+    $('phChart').innerHTML = `<svg viewBox="0 0 ${W} ${H + 16}" style="width:100%;height:auto;display:block">
+      <polyline points="${s.map(e => x(e) + ',' + y(e)).join(' ')}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linejoin="round"/>
+      ${s.map(e => `<circle cx="${x(e)}" cy="${y(e)}" r="3.5" fill="${color}"><title>${new Date(e.at).toLocaleDateString('pt-BR')}: ${fmtUp(e.up, st.base)}</title></circle>`).join('')}
+      <text x="${P}" y="${H + 12}" font-size="11" fill="var(--muted)">${new Date(t0).toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' })}</text>
+      <text x="${W - P}" y="${H + 12}" font-size="11" fill="var(--muted)" text-anchor="end">${new Date(t1).toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' })}</text>
+    </svg>`;
+  } else $('phChart').innerHTML = '';
+  $('phList').innerHTML = [...s].reverse().map(e => `<div class="ph-item">
+      <span class="muted">${new Date(e.at).toLocaleDateString('pt-BR')}</span>
+      <span>${e.qty ? String(e.qty).replace('.', ',') + ' ' + e.unit + ' · ' : ''}${brl(e.price)}</span>
+      <b>${fmtUp(e.up, st.base)}</b></div>`).join('');
+  $('priceDlg').showModal();
+}
+$('phClose').onclick = () => $('priceDlg').close();
 
 function addShopItem(name) {
   name = name.trim(); if (!name || !areas[area]) return false;
@@ -1466,9 +1562,10 @@ function openShopItem(id) {
   $('itPrice').value = it.price ? it.price.toFixed(2).replace('.', ',') : '';
   $('itDone').checked = !!it.done;
   $('itMsg').hidden = true;
-  const last = state.lastPrices[normName(it.name)];
-  $('itLast').textContent = last?.price
-    ?`Última compra: ${last.qty ? String(last.qty).replace('.', ',') + ' ' + last.unit + ' por ' : ''}${brl(last.price)} em ${new Date(last.at).toLocaleDateString('pt-BR')}.`
+  const st = priceStats(normName(it.name)), l = st?.latest;
+  $('itLast').innerHTML = l
+    ? `Última compra: ${l.qty ? String(l.qty).replace('.', ',') + ' ' + l.unit + ' por ' : ''}${brl(l.price)} em ${new Date(l.at).toLocaleDateString('pt-BR')}` +
+      ` (${fmtUp(l.up, st.base)}).` + (st.varPct != null ? `<br>Variação: ${varTag(st, true)} · menor ${fmtUp(st.min, st.base)} · maior ${fmtUp(st.max, st.base)}` : '')
     : '';
   $('itemDlg').showModal();
 }
@@ -1509,16 +1606,22 @@ $('finCancel').onclick = () => $('finDlg').close();
 $('finOk').onclick = () => {
   const done = state.shopping.filter(i => i.done);
   const total = Math.round(done.reduce((s, i) => s + (i.price || 0), 0) * 100) / 100;
-  const batch = F.writeBatch(db), fields = {}, last = {};
+  const batch = F.writeBatch(db), fields = {}, last = {}, hist = {}, now = Date.now();
   done.forEach(i => {
+    const key = normName(i.name);
     fields[`items.${i.id}`] = F.deleteField();
     // lembra todo item comprado (para sugerir depois); o preço só é trocado quando foi informado
-    last[normName(i.name)] = i.price
-      ? { name: i.name, price: i.price, qty: i.qty || null, unit: i.unit || 'un', at: Date.now() }
-      : { name: i.name };
+    last[key] = i.price ? { name: i.name, price: i.price, qty: i.qty || null, unit: i.unit || 'un', at: now } : { name: i.name };
+    if (i.price) {
+      (hist[key] ||= {})[newId()] = { name: i.name, price: i.price, qty: i.qty || null, unit: i.unit || 'un', at: now };
+      // histórico guarda ~13 meses; o resto é apagado para o registro não crescer sem fim
+      Object.entries(state.priceHist[key] || {}).forEach(([eid, e]) => {
+        if (e.at < now - 395 * DAY) fields[`hist.${key}.${eid}`] = F.deleteField();
+      });
+    }
   });
   batch.update(shopRef(), fields);
-  batch.set(shopRef(), { last }, { merge: true });
+  batch.set(shopRef(), { last, hist }, { merge: true });
   if ($('finLaunch').checked && total > 0) {
     const date = todayStr();
     batch.set(monthRef(date), { txs: { [newId()]: txData({

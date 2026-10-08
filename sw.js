@@ -3,8 +3,9 @@
 //  descreva as mudanças. É isso que faz os aparelhos mostrarem
 //  o aviso "Nova versão disponível".
 // ============================================================
-const VERSION = '1.5.0';
+const VERSION = '1.6.0';
 const CHANGES = [
+  'Histórico de preços na lista de compras: variação em 12 meses, menor e maior preço e gráfico',
   'Nova navegação por abas: Início, Lançar, Compras, Investir e Mais',
   'Contas a pagar no Início, com botão para marcar como paga',
   'Lista de compras: catálogo de itens, quantidade, valor pago e último preço',
